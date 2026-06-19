@@ -6,6 +6,7 @@ import { QuestConfigModal } from '../ui/quest-config';
 import { SHOP_VIEW_TYPE } from '../ui/shop';
 import { HEALTH_VIEW_TYPE } from '../ui/health-tracker';
 import { HealthSetupModal } from '../ui/health-setup';
+import { OnboardingModal } from '../ui/onboarding';
 import { executeObsidianCommand } from '../command-api';
 import { getLang, pick } from '../i18n';
 
@@ -15,6 +16,12 @@ export function registerCommands(plugin: LifequestPlugin) {
 		id: 'open-dashboard',
 		name: pick(lang, 'LifeQuest: Abrir panel', 'LifeQuest: Open dashboard'),
 		callback: () => void plugin.openDashboard()
+	});
+
+	plugin.addCommand({
+		id: 'open-onboarding',
+		name: pick(lang, 'LifeQuest: Reabrir onboarding', 'LifeQuest: Reopen onboarding'),
+		callback: () => new OnboardingModal(plugin, true).open()
 	});
 
 	plugin.addCommand({

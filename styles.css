@@ -526,6 +526,125 @@
   border-top: 1px solid rgba(255,255,255,0.07);
 }
 
+.lq-onboarding-modal {
+  max-width: 760px;
+}
+
+.lq-onboarding-lead {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.lq-onboarding-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.lq-onboarding-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.lq-onboarding-step.is-active {
+  border-color: #7F77DD;
+  background: rgba(127,119,221,0.14);
+}
+
+.lq-onboarding-step.is-complete {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.lq-onboarding-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lq-onboarding-step-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lq-onboarding-body {
+  min-height: 320px;
+}
+
+.lq-onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.lq-onboarding-card {
+  padding: 18px;
+}
+
+.lq-onboarding-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.lq-onboarding-card p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.lq-onboarding-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.lq-onboarding-list li + li {
+  margin-top: 8px;
+}
+
+.lq-onboarding-toggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.lq-onboarding-toggle strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.lq-onboarding-toggle p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.lq-onboarding-tip {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(127,119,221,0.12);
+  color: var(--text-normal);
+  line-height: 1.5;
+}
+
 /* ── Quest Config Modal ─────────────────────────────────────────────────────── */
 .lq-quest-modal-layout {
   display: grid;

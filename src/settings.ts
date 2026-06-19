@@ -849,11 +849,14 @@ export class LifequestSettingTab extends PluginSettingTab {
 			cls: 'setting-item-description',
 		});
 
-		this.renderSubheading(panel, this.tr('settings_design_reference'));
-		panel.createEl('p', {
-			text: this.tr('Este layout sigue la idea de sidebar + panel inspirada en docs/lonelog-settings-redesign.md.', 'This layout follows the sidebar + panel idea inspired by docs/lonelog-settings-redesign.md.'),
-			cls: 'setting-item-description',
-		});
+		new Setting(panel)
+			.setName(this.tr('Onboarding inicial', 'Initial onboarding'))
+			.setDesc(this.tr('Vuelve a abrir la guía de primera configuración del plugin.', 'Reopen the plugin first-run setup guide.'))
+			.addButton((btn) => btn
+				.setButtonText(this.tr('Abrir onboarding', 'Open onboarding'))
+				.onClick(() => {
+					this.plugin.openOnboarding(true);
+				}));
 	}
 
 	private renderPanelHeader(panel: HTMLElement, title: string, description: string): void {

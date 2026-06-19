@@ -102,6 +102,9 @@ class LifequestStore {
 
 			// Migrate Settings
 			if (!data.settings) data.settings = { ...DEFAULT_DATA.settings };
+			if (typeof data.settings.onboardingCompleted !== 'boolean') {
+				data.settings.onboardingCompleted = true;
+			}
 			if (!data.settings.dailyMessage) {
 				data.settings.dailyMessage = { ...DEFAULT_DATA.settings.dailyMessage };
 			} else {

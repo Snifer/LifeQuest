@@ -213,6 +213,7 @@ export interface DailyMessageSettings {
 
 export interface PluginSettings {
 	language: 'en' | 'es';
+	onboardingCompleted: boolean;
 	messagesTone: 'motivating' | 'neutral' | 'stoic' | 'humorous';
 	eveningReminder: boolean;
 	streakAlert: boolean;
@@ -259,7 +260,8 @@ export const DEFAULT_DATA: LifequestData = {
 	activityLog: [],
 	weeklyReviews: {},
 	settings: {
-		language: "es",
+		language: "en",
+		onboardingCompleted: false,
 		messagesTone: "motivating",
 		eveningReminder: true,
 		streakAlert: true,
@@ -273,8 +275,8 @@ export const DEFAULT_DATA: LifequestData = {
 			},
 		},
 		coinsEnabled: true,
-		shopEnabled: true,
-		showCoinsInDashboard: true,
+		shopEnabled: false,
+		showCoinsInDashboard: false,
 		rewardSettings: {
 			notificationsEnabled: true,
 			multiplier: 1.0,

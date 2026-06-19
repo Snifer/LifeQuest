@@ -8,6 +8,7 @@ import { WeeklyReviewView, VIEW_TYPE_WEEKLY_REVIEW } from './ui/review-view';
 import { DashboardView, VIEW_TYPE_DASHBOARD } from './ui/dashboard';
 import { ShopView, SHOP_VIEW_TYPE } from './ui/shop';
 import { HealthTrackerView, HEALTH_VIEW_TYPE } from './ui/health-tracker';
+import { OnboardingModal } from './ui/onboarding';
 import { parseWidgetParams, renderWidget, registerWidgetAutoRefresh } from './ui/widget';
 import { needsWeighIn } from './core/health-engine';
 import { getLang, pick } from './i18n';
@@ -76,6 +77,16 @@ export default class LifequestPlugin extends Plugin {
 		) {
 			this.scheduleWeighInReminder();
 		}
+
+		if (!this.data.settings.onboardingCompleted) {
+			this.app.workspace.onLayoutReady(() => {
+				window.setTimeout(() => {
+					if (!this.data.settings.onboardingCompleted) {
+						new OnboardingModal(this).open();
+					}
+				}, 150);
+			});
+		}
 	}
 
 	private scheduleWeighInReminder() {
@@ -137,5 +148,9 @@ export default class LifequestPlugin extends Plugin {
 	getDashboardView(): DashboardView | null {
 		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
 		return leaves[0]?.view instanceof DashboardView ? leaves[0].view : null;
+	}
+
+	openOnboarding(forceOpen = true): void {
+		new OnboardingModal(this, forceOpen).open();
 	}
 }

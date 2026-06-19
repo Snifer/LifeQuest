@@ -20,11 +20,11 @@ export function t(key: keyof typeof en, lang: SupportedLanguage, vars: Record<st
 }
 
 export function getLang(source?: LanguageCarrier): SupportedLanguage {
-	if (!source) return 'es';
+	if (!source) return 'en';
 	if (typeof source === 'string') return source;
 	const carrier = source as { data?: { settings?: { language?: SupportedLanguage } }; settings?: { language?: SupportedLanguage } };
-	if (carrier.data) return carrier.data.settings?.language ?? 'es';
-	return carrier.settings?.language ?? 'es';
+	if (carrier.data) return carrier.data.settings?.language ?? 'en';
+	return carrier.settings?.language ?? 'en';
 }
 
 export function pick(lang: SupportedLanguage, esText: string, enText: string): string {
