@@ -204,7 +204,7 @@ function renderStreak(el: HTMLElement, data: LifequestData): void {
   const { streak } = data;
   const chip = el.createDiv({ cls: 'lq-widget-streak-chip' });
 
-  chip.appendChild(createFlameIcon(data.profile.accentColor));
+  chip.appendChild(createFlameIcon(data.profile.accentColor, chip.ownerDocument));
 
   chip.createEl('span', {
     cls: 'lq-widget-streak-number',
@@ -597,20 +597,20 @@ export function registerWidgetAutoRefresh(
   ctx.addChild(new WidgetAutoRefreshChild(el));
 }
 
-function createFlameIcon(accentColor: string): SVGSVGElement {
+function createFlameIcon(accentColor: string, activeDoc: Document): SVGSVGElement {
   const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
+  const svg = activeDoc.createElementNS(ns, 'svg');
   svg.setAttribute('width', '14');
   svg.setAttribute('height', '18');
   svg.setAttribute('viewBox', '0 0 14 18');
   svg.setAttribute('fill', 'none');
 
-  const outer = document.createElementNS(ns, 'path');
+  const outer = activeDoc.createElementNS(ns, 'path');
   outer.setAttribute('d', 'M7 0C7 0 13 6.3 13 10.5C13 14.1 10.3 17 7 17C3.7 17 1 14.1 1 10.5C1 6.3 7 0 7 0Z');
   outer.setAttribute('fill', accentColor);
   outer.setAttribute('opacity', '0.9');
 
-  const inner = document.createElementNS(ns, 'path');
+  const inner = activeDoc.createElementNS(ns, 'path');
   inner.setAttribute('d', 'M7 6C7 6 10 9 10 11.5C10 13.4 8.7 15 7 15C5.3 15 4 13.4 4 11.5C4 9 7 6 7 6Z');
   inner.setAttribute('fill', '#FAEEDA');
 

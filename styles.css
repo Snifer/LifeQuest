@@ -656,12 +656,6 @@
   outline: none;
 }
 .lq-textarea:focus { border-color: #7F77DD; }
-/* ── Weekly Review Suggestions ─────────────────────────────────────────────── */
-.lq-sug-increase_difficulty { color: var(--lq-green) !important; font-weight: 600; }
-.lq-sug-adjust_or_pause { color: var(--lq-red) !important; font-weight: 600; }
-.lq-sug-review_goal { color: var(--lq-yellow) !important; font-weight: 600; }
-.lq-sug-maintain { color: var(--lq-muted) !important; }
-
 .lq-delta { font-size: 10px; margin-left: 4px; }
 .lq-delta.up { color: #4ade80; }
 .lq-delta.down { color: #f87171; }
@@ -1582,6 +1576,15 @@
 
 .lq-review-suggestion.lq-sug-adjust_or_pause {
   color: var(--lq-red);
+}
+
+.lq-review-suggestion.lq-sug-review_goal {
+  color: var(--lq-yellow);
+  font-weight: 600;
+}
+
+.lq-review-suggestion.lq-sug-maintain {
+  color: var(--lq-muted);
 }
 
 .lq-review-footer {

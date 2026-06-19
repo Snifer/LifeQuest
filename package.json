@@ -1,7 +1,7 @@
 {
 	"name": "lifequest",
-	"version": "1.0.0",
-	"description": "LifeQuest, an Obsidian plugin that gamifies daily progress with quests, XP, reviews, and optional add-ons.",
+	"version": "1.0.1",
+	"description": "LifeQuest gamifies daily progress with quests, XP, reviews, and optional add-ons.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, moment } from 'obsidian';
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting, moment } from 'obsidian';
 import type LifequestPlugin from './main';
 import { DEFAULT_DATA, type RewardSettings, type ShopReward } from './types';
 import { executeObsidianCommand } from './command-api';
@@ -87,7 +87,16 @@ export class LifequestSettingTab extends PluginSettingTab {
 		return value;
 	}
 
+	private setDestructiveButton(button: ButtonComponent): ButtonComponent {
+		button.buttonEl.classList.add('mod-warning');
+		return button;
+	}
+
 	display(): void {
+		this.rerender();
+	}
+
+	private rerender(): void {
 		const { containerEl } = this;
 		containerEl.empty();
 		const layout = containerEl.createDiv({ cls: 'lq-settings-layout' });
@@ -121,7 +130,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 			}
 			btn.addEventListener('click', () => {
 				this.activeSection = section.id;
-				this.display();
+				this.rerender();
 			});
 		});
 
@@ -203,7 +212,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.dailyMessage.enabled = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}));
 
 		if (this.plugin.data.settings.dailyMessage.enabled) {
@@ -296,7 +305,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					.onClick(async () => {
 						this.plugin.data.settings.lifeAreas.splice(index, 1);
 						await this.plugin.store.save(this.plugin.data);
-						this.display();
+						this.rerender();
 					}));
 		});
 
@@ -312,7 +321,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 						color: '#ffffff',
 					});
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}));
 
 		this.renderSubheading(panel, this.tr('settings_hero_classes'));
@@ -347,7 +356,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					.onClick(async () => {
 						this.plugin.data.settings.heroClasses.splice(index, 1);
 						await this.plugin.store.save(this.plugin.data);
-						this.display();
+						this.rerender();
 					}));
 
 			new Setting(panel)
@@ -374,7 +383,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 						description: 'Describe tu clase aquí',
 					});
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}));
 	}
 
@@ -407,7 +416,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.coinsEnabled = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}));
 
 		if (!this.plugin.data.settings.coinsEnabled) {
@@ -432,7 +441,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 						this.plugin.data.settings.rewardSettings = structuredClone(preset);
 					await this.plugin.store.save(this.plugin.data);
 					new Notice(this.tr(`Preset aplicado: ${val}`, `Reward preset applied: ${val}`));
-					this.display();
+					this.rerender();
 				}));
 
 		new Setting(panel)
@@ -451,8 +460,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 			.addSlider((slider) => slider
 				.setLimits(0.5, 3.0, 0.1)
 				.setValue(this.plugin.data.settings.rewardSettings.multiplier)
-				.setDynamicTooltip()
-				.onChange(async (val) => {
+								.onChange(async (val) => {
 					this.plugin.data.settings.rewardSettings.multiplier = val;
 					await this.plugin.store.save(this.plugin.data);
 				}));
@@ -609,7 +617,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.shopEnabled = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}))
 			.addExtraButton((btn) => btn
 				.setIcon(this.plugin.data.settings.shopEnabled ? 'check-circle' : 'circle')
@@ -654,7 +662,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					this.plugin.data.settings.healthEnabled = val;
 					if (this.plugin.data.health) this.plugin.data.health.enabled = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}))
 			.addExtraButton((btn) => btn
 				.setIcon(this.plugin.data.settings.healthEnabled ? 'check-circle' : 'circle')
@@ -681,7 +689,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.healthModules.weight = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}))
 			.addExtraButton((btn) => btn
 				.setIcon(this.plugin.data.settings.healthModules.weight ? 'check-circle' : 'circle'));
@@ -694,7 +702,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.healthModules.bloodPressure = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}))
 			.addExtraButton((btn) => btn
 				.setIcon(this.plugin.data.settings.healthModules.bloodPressure ? 'check-circle' : 'circle'));
@@ -707,7 +715,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 				.onChange(async (val) => {
 					this.plugin.data.settings.healthModules.medications = val;
 					await this.plugin.store.save(this.plugin.data);
-					this.display();
+					this.rerender();
 				}))
 			.addExtraButton((btn) => btn
 				.setIcon(this.plugin.data.settings.healthModules.medications ? 'check-circle' : 'circle'));
@@ -752,25 +760,27 @@ export class LifequestSettingTab extends PluginSettingTab {
 
 			new Setting(panel)
 					.setName(this.tr('Eliminar registros de peso', 'Delete weight entries'))
-					.setDesc(this.tr('Zona peligrosa: borrará todos los registros de peso.', 'Danger zone: this will delete all weight entries.'))
-					.addButton((btn) => btn
-						.setButtonText(this.tr('Eliminar registros', 'Delete entries'))
-						.setWarning()
-						.onClick(() => {
-							new ConfirmModal(
-								this.app,
-								this.tr('Eliminar registros de peso', 'Delete weight entries'),
-								this.tr('Esta acción eliminará todos los registros de peso y no se puede deshacer.', 'This will delete all weight entries and cannot be undone.'),
-								async () => {
-									this.plugin.data.health!.entries = [];
-									await this.plugin.store.save(this.plugin.data);
-									new Notice(this.tr('Registros de salud eliminados.', 'Health records deleted.'));
-									this.display();
-								},
-								this.tr('Eliminar', 'Delete'),
-								this.tr('Cancelar', 'Cancel')
-							).open();
-						}));
+						.setDesc(this.tr('Zona peligrosa: borrará todos los registros de peso.', 'Danger zone: this will delete all weight entries.'))
+						.addButton((btn) => {
+							this.setDestructiveButton(btn);
+							return btn
+								.setButtonText(this.tr('Eliminar registros', 'Delete entries'))
+								.onClick(() => {
+									new ConfirmModal(
+										this.app,
+										this.tr('Eliminar registros de peso', 'Delete weight entries'),
+										this.tr('Esta acción eliminará todos los registros de peso y no se puede deshacer.', 'This will delete all weight entries and cannot be undone.'),
+										async () => {
+											this.plugin.data.health!.entries = [];
+											await this.plugin.store.save(this.plugin.data);
+											new Notice(this.tr('Registros de salud eliminados.', 'Health records deleted.'));
+											this.rerender();
+										},
+										this.tr('Eliminar', 'Delete'),
+										this.tr('Cancelar', 'Cancel')
+									).open();
+								});
+						});
 		}
 	}
 
@@ -786,7 +796,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					const dataStr = JSON.stringify(this.plugin.data, null, 2);
 					const blob = new Blob([dataStr], { type: 'application/json' });
 					const url = URL.createObjectURL(blob);
-					const anchor = document.createElement('a');
+						const anchor = this.containerEl.ownerDocument.createElement('a');
 					anchor.href = url;
 					anchor.download = `lifequest-data-${moment().format('YYYY-MM-DD')}.json`;
 					anchor.click();
@@ -795,27 +805,29 @@ export class LifequestSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(panel)
-			.setName(this.tr('Restablecer de fábrica', 'Factory reset'))
-				.setDesc(this.tr('Borra todas las quests, XP, monedas y configuración. No se puede deshacer.', 'Erase all quests, XP, coins and settings. This cannot be undone.'))
-				.addButton((btn) => btn
-					.setButtonText(this.tr('Restablecer', 'Factory reset'))
-					.setWarning()
-					.onClick(() => {
-						new ConfirmModal(
-							this.app,
-							this.tr('Restablecer de fábrica', 'Factory reset'),
-							this.tr('Esto eliminará quests, XP, monedas y configuración.', 'This will delete quests, XP, coins, and settings.'),
-							async () => {
-								this.plugin.data = structuredClone(DEFAULT_DATA);
-								await this.plugin.store.save(this.plugin.data);
-								new Notice(this.tr('LifeQuest fue restaurado a valores de fábrica.', 'LifeQuest has been reset to factory defaults.'));
-								this.display();
-								this.plugin.getDashboardView()?.scheduleRefresh();
-							},
-							this.tr('Restablecer', 'Reset'),
-							this.tr('Cancelar', 'Cancel')
-						).open();
-					}));
+				.setName(this.tr('Restablecer de fábrica', 'Factory reset'))
+					.setDesc(this.tr('Borra todas las quests, XP, monedas y configuración. No se puede deshacer.', 'Erase all quests, XP, coins and settings. This cannot be undone.'))
+					.addButton((btn) => {
+						this.setDestructiveButton(btn);
+						return btn
+							.setButtonText(this.tr('Restablecer', 'Factory reset'))
+							.onClick(() => {
+								new ConfirmModal(
+									this.app,
+									this.tr('Restablecer de fábrica', 'Factory reset'),
+									this.tr('Esto eliminará quests, XP, monedas y configuración.', 'This will delete quests, XP, coins, and settings.'),
+									async () => {
+										this.plugin.data = structuredClone(DEFAULT_DATA);
+										await this.plugin.store.save(this.plugin.data);
+										new Notice(this.tr('LifeQuest fue restaurado a valores de fábrica.', 'LifeQuest has been reset to factory defaults.'));
+										this.rerender();
+										this.plugin.getDashboardView()?.scheduleRefresh();
+									},
+									this.tr('Restablecer', 'Reset'),
+									this.tr('Cancelar', 'Cancel')
+								).open();
+							});
+					});
 	}
 
 	private renderAboutPanel(panel: HTMLElement): void {

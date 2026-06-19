@@ -204,7 +204,7 @@ export async function generateDailyNote(plugin: LifequestPlugin): Promise<void> 
 // ─── Checkbox detection ───────────────────────────────────────────────────────
 
 const prevState: Map<string, boolean> = new Map();
-let modifyDebounce: ReturnType<typeof setTimeout> | null = null;
+let modifyDebounce: number | null = null;
 
 async function parseQuestStates(plugin: LifequestPlugin, file: TFile): Promise<Map<string, boolean>> {
 	const content = await plugin.app.vault.read(file);
@@ -359,8 +359,8 @@ export function initDailyNoteIntegration(plugin: LifequestPlugin): void {
 			const todayStr = moment().format(fmt);
 			if (file.basename !== todayStr) return;
 
-			if (modifyDebounce) clearTimeout(modifyDebounce);
-			modifyDebounce = setTimeout(() => {
+				if (modifyDebounce) window.clearTimeout(modifyDebounce);
+				modifyDebounce = window.setTimeout(() => {
 				modifyDebounce = null;
 				void (async () => {
 					const current = await parseQuestStates(plugin, file);

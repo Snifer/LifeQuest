@@ -234,7 +234,7 @@ export interface PluginSettings {
 }
 
 export const DEFAULT_DATA: LifequestData = {
-	version: "1.0.0",
+	version: "1.0.1",
 	profile: {
 		heroName: "Héroe",
 		motto: "",

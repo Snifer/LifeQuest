@@ -14,7 +14,7 @@ export const VIEW_TYPE_DASHBOARD = 'lifequest-dashboard';
 
 export class DashboardView extends ItemView {
 	private plugin: LifequestPlugin;
-	private refreshTimeout: ReturnType<typeof setTimeout> | null = null;
+	private refreshTimeout: number | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: LifequestPlugin) {
 		super(leaf);
@@ -30,13 +30,13 @@ export class DashboardView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
-		if (this.refreshTimeout) clearTimeout(this.refreshTimeout);
+		if (this.refreshTimeout) window.clearTimeout(this.refreshTimeout);
 	}
 
 	/** Debounced refresh — called from vault modify listener */
 	scheduleRefresh(): void {
-		if (this.refreshTimeout) clearTimeout(this.refreshTimeout);
-		this.refreshTimeout = setTimeout(() => {
+		if (this.refreshTimeout) window.clearTimeout(this.refreshTimeout);
+		this.refreshTimeout = window.setTimeout(() => {
 			this.refreshTimeout = null;
 			this.render();
 		}, 200);
