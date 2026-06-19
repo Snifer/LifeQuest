@@ -2,28 +2,28 @@
 
 ## 1.0.0
 
-Primera release estable de LifeQuest para Obsidian.
+First stable release of LifeQuest for Obsidian.
 
-### Añadido
+### Added
 
-- Sistema principal de quests con XP, niveles, streaks, badges y panel de progreso.
-- Nota diaria con inyección de quests y sincronización de checkboxes.
-- Review semanal con estadísticas e insights.
-- Economía con monedas, tienda y recompensas configurables.
-- Add-on de salud con peso, presión arterial y medicaciones.
-- Internacionalización base para español e inglés.
+- Core quest system with XP, levels, streaks, badges, and progress panel.
+- Daily note integration with quest injection and checkbox sync.
+- Weekly review with statistics and insights.
+- Economy with coins, shop, and configurable rewards.
+- Health add-on with weight tracking, blood pressure, and medication log.
+- Base internationalization for Spanish and English.
 
-### Mejorado
+### Changed
 
-- Configuración reorganizada por paneles.
-- Salud y tienda tratadas como add-ons opcionales.
-- Recompensas centralizadas en `rewardSettings`.
-- Mayor coherencia de interfaz y mensajes en `es/en`.
+- Settings reorganized into clearer panels.
+- Health and shop extracted as optional add-ons.
+- Rewards configuration centralized in `rewardSettings`.
+- More consistent UI and messaging in `es` / `en`.
 
-### Corregido
+### Fixed
 
-- Consistencia de fechas en la nota diaria y en la sincronización de quests.
-- Cálculo de `getXPToNextLevel` en el nivel máximo.
-- Reglas de weigh-in semanales para que respeten la semana actual y el día configurado.
-- Tendencia de peso calculada con fechas reales y unidades consistentes.
-- Validaciones de economía, salud y configuración para evitar estados incoherentes.
+- Date consistency in the daily note and quest synchronization.
+- `getXPToNextLevel` calculation at max level.
+- Weekly weigh-in rules now respect the current week and configured day.
+- Weight trend computed from real dates with consistent units.
+- Validation for economy, health, and configuration to prevent inconsistent states.
