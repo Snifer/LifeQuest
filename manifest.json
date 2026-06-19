@@ -1,0 +1,10 @@
+{
+  "id": "lifequest",
+  "name": "LifeQuest",
+  "version": "1.0.0",
+  "minAppVersion": "1.12.7",
+  "description": "Gamify your daily life inside Obsidian — quests, XP, levels, streaks, and a personal dashboard.",
+  "author": "Snifer (Bastion del Dinosaurio)",
+  "authorUrl": "https://youtube.com/c/sniferl4bs",
+  "isDesktopOnly": false
+}

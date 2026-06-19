@@ -1,0 +1,185 @@
+name: Dev prerelease
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  # ────────────────────────────────────────────────────────────
+  # JOB 1: Lint con reglas de Obsidian (bloquea si hay errores)
+  # ────────────────────────────────────────────────────────────
+  lint:
+    name: ESLint Obsidian check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (reglas obsidianmd via config)
+        id: eslint
+        run: |
+          set +e
+          npx eslint . -f json -o eslint-report.json
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          set -e
+          exit $EXIT_CODE
+
+      - name: Upload ESLint report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report-dev
+          path: eslint-report.json
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 2: Crea issue de incompatibilidad si el lint falla
+  # ────────────────────────────────────────────────────────────
+  report-lint-failure:
+    name: Create incompatibility issue
+    needs: lint
+    runs-on: ubuntu-latest
+    if: failure()
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ESLint report
+        uses: actions/download-artifact@v4
+        with:
+          name: eslint-report-dev
+
+      - name: Format lint report as markdown
+        run: |
+          python3 - <<'EOF'
+          import json, os
+
+          with open("eslint-report.json") as f:
+              data = json.load(f)
+
+          lines = []
+          lines.append("## Incompatibilidad detectada por ESLint (Obsidian plugin)")
+          lines.append("")
+          lines.append("| Campo | Valor |")
+          lines.append("|---|---|")
+          lines.append("| **Rama** | `" + os.environ.get('BRANCH','') + "` |")
+          lines.append("| **Commit** | `" + os.environ.get('COMMIT_SHA','') + "` |")
+          lines.append("| **Autor** | @" + os.environ.get('ACTOR','') + " |")
+          lines.append("| **Workflow run** | [Ver logs](" + os.environ.get('RUN_URL','') + ") |")
+          lines.append("")
+          lines.append("### Errores encontrados")
+          lines.append("")
+
+          total = 0
+          for file_result in data:
+              rel_path = file_result["filePath"].replace(os.getcwd(), "").lstrip("/")
+              for msg in file_result.get("messages", []):
+                  if msg.get("severity", 0) >= 2:
+                      rule = msg.get("ruleId", "unknown")
+                      if rule and "obsidian" in rule.lower():
+                          lines.append(f"- `{rel_path}` **L{msg['line']}:{msg['column']}** - `{rule}`")
+                          lines.append(f"  > {msg['message']}")
+                          lines.append("")
+                          total += 1
+
+          if total == 0:
+              lines.append("_No se encontraron errores de reglas Obsidian en el reporte._")
+
+          lines.append("")
+          lines.append("---")
+          lines.append("> Issue creado automaticamente. Corrige los errores y vuelve a hacer push a `dev`.")
+
+          with open("issue-body.md", "w") as out:
+              out.write("\n".join(lines))
+          EOF
+        env:
+          BRANCH: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Create GitHub issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "[LifeQuest Obsidian] ESLint fallo en dev @ ${{ github.sha }}"
+          content-filepath: ./issue-body.md
+          labels: |
+            bug
+            incompatibility
+            obsidian-api
+            dev
+
+  # ────────────────────────────────────────────────────────────
+  # JOB 3: Prerelease (solo corre si el lint paso OK)
+  # ────────────────────────────────────────────────────────────
+  prerelease:
+    name: Dev prerelease
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump prerelease version
+        id: bump
+        run: |
+          BASE_VERSION=$(node -p "require('./package.json').version.split('-')[0]")
+          NEW_VERSION="${BASE_VERSION}-dev.${GITHUB_RUN_NUMBER}"
+          node -e "
+          const fs = require('fs');
+          const pkgPath = 'package.json';
+          const manifestPath = 'manifest.json';
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          pkg.version = '${NEW_VERSION}';
+          manifest.version = '${NEW_VERSION}';
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, '\t') + '\n');
+          fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+          "
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Create GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: "Dev ${{ steps.bump.outputs.version }}"
+          prerelease: true
+          draft: false
+          target_commitish: ${{ github.sha }}
+          files: |
+            main.js
+            manifest.json
+            styles.css
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
