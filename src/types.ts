@@ -220,6 +220,9 @@ export interface PluginSettings {
 	lifeAreas: LifeArea[];
 	heroClasses: HeroClass[];
 	dailyNoteFormat: string;
+	dailyNoteTemplate: string;
+	dailyNoteGroupByArea: boolean;
+	dailyNoteOnlyPending: boolean;
 	dailyMessage: DailyMessageSettings;
 	coinsEnabled: boolean;
 	shopEnabled: boolean;
@@ -235,7 +238,7 @@ export interface PluginSettings {
 }
 
 export const DEFAULT_DATA: LifequestData = {
-	version: "1.0.1",
+	version: "1.0.2",
 	profile: {
 		heroName: "Héroe",
 		motto: "",
@@ -266,6 +269,9 @@ export const DEFAULT_DATA: LifequestData = {
 		eveningReminder: true,
 		streakAlert: true,
 		dailyNoteFormat: "YYYY-MM-DD",
+		dailyNoteTemplate: "{title}\n{content}",
+		dailyNoteGroupByArea: false,
+		dailyNoteOnlyPending: false,
 		dailyMessage: {
 			enabled: false,
 			mode: "random_daily",

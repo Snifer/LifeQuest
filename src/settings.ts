@@ -205,6 +205,46 @@ export class LifequestSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(panel)
+			.setName(this.tr('Plantilla del bloque diario', 'Daily block template'))
+			.setDesc(this.tr(
+				'Personaliza el bloque generado. Puedes usar {title}, {content} y {date}.',
+				'Customize the generated block. You can use {title}, {content}, and {date}.'
+			))
+			.addTextArea((text) => text
+				.setPlaceholder('{title}\n{content}')
+				.setValue(this.plugin.data.settings.dailyNoteTemplate)
+				.onChange(async (val) => {
+					this.plugin.data.settings.dailyNoteTemplate = val.trim().length > 0 ? val : '{title}\n{content}';
+					await this.plugin.store.save(this.plugin.data);
+				}));
+
+		new Setting(panel)
+			.setName(this.tr('Agrupar quests por área', 'Group quests by area'))
+			.setDesc(this.tr(
+				'Divide el bloque diario en secciones por área de vida.',
+				'Split the daily block into sections by life area.'
+			))
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.data.settings.dailyNoteGroupByArea)
+				.onChange(async (val) => {
+					this.plugin.data.settings.dailyNoteGroupByArea = val;
+					await this.plugin.store.save(this.plugin.data);
+				}));
+
+		new Setting(panel)
+			.setName(this.tr('Insertar solo quests pendientes', 'Insert only pending quests'))
+			.setDesc(this.tr(
+				'Oculta las quests ya completadas hoy cuando vuelves a generar el bloque.',
+				'Hide quests already completed today when you regenerate the block.'
+			))
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.data.settings.dailyNoteOnlyPending)
+				.onChange(async (val) => {
+					this.plugin.data.settings.dailyNoteOnlyPending = val;
+					await this.plugin.store.save(this.plugin.data);
+				}));
+
+		new Setting(panel)
 			.setName(this.tr('Frase diaria remota', 'Remote daily message'))
 			.setDesc(this.tr('Añade una frase motivacional encima de la nota diaria solo si activas esta opción.', 'Add a motivational message above the daily note only if you enable this option.'))
 			.addToggle((toggle) => toggle

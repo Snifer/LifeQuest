@@ -105,6 +105,15 @@ class LifequestStore {
 			if (typeof data.settings.onboardingCompleted !== 'boolean') {
 				data.settings.onboardingCompleted = true;
 			}
+			if (typeof data.settings.dailyNoteTemplate !== 'string' || data.settings.dailyNoteTemplate.trim() === '') {
+				data.settings.dailyNoteTemplate = DEFAULT_DATA.settings.dailyNoteTemplate;
+			}
+			if (typeof data.settings.dailyNoteGroupByArea !== 'boolean') {
+				data.settings.dailyNoteGroupByArea = DEFAULT_DATA.settings.dailyNoteGroupByArea;
+			}
+			if (typeof data.settings.dailyNoteOnlyPending !== 'boolean') {
+				data.settings.dailyNoteOnlyPending = DEFAULT_DATA.settings.dailyNoteOnlyPending;
+			}
 			if (!data.settings.dailyMessage) {
 				data.settings.dailyMessage = { ...DEFAULT_DATA.settings.dailyMessage };
 			} else {

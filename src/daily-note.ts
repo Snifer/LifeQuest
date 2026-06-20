@@ -15,11 +15,12 @@ import { parseDailyMessageSource, pickDailyMessage, resolveDailyMessageSourceUrl
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const QUEST_BLOCK_START = '## Quests del día';
+const QUEST_BLOCK_START = '<!-- lifequest:start -->';
 const QUEST_BLOCK_END   = '<!-- /lifequest -->';
+const LEGACY_QUEST_BLOCK_START = '## Quests del día';
 const MESSAGE_BLOCK_START = '<!-- lifequest-message:start -->';
 const MESSAGE_BLOCK_END = '<!-- /lifequest-message -->';
-const QUEST_TAG_REGEX   = /- \[( |x)\] .+ #lq-([a-f0-9-]+)/g;
+const QUEST_TAG_REGEX   = /^[\t >*\-+0-9.)]*\[( |x|X)\].*?#lq-([a-f0-9-]+)\b.*$/gm;
 
 /** Default emoji per well-known area id, fallback to ⭐ */
 const AREA_EMOJI: Record<string, string> = {
@@ -32,6 +33,10 @@ const AREA_EMOJI: Record<string, string> = {
 
 function areaEmoji(areaId: string): string {
 	return AREA_EMOJI[areaId] ?? '⭐';
+}
+
+function getDailyQuestHeading(data: LifequestData): string {
+	return (data.settings.language ?? 'en') === 'es' ? '## Quests del día' : '## Quests for today';
 }
 
 // ─── Quest block generation ───────────────────────────────────────────────────
@@ -52,6 +57,17 @@ function upsertManagedBlock(content: string, startMarker: string, endMarker: str
 		}
 	}
 
+	if (startMarker === QUEST_BLOCK_START) {
+		const legacyStartIdx = content.indexOf(LEGACY_QUEST_BLOCK_START);
+		if (legacyStartIdx !== -1) {
+			const endIdx = content.indexOf(endMarker, legacyStartIdx);
+			if (endIdx !== -1) {
+				const replacement = block ? `${block}\n` : '';
+				return content.slice(0, legacyStartIdx) + replacement + content.slice(endIdx + endMarker.length).replace(/^\n+/, '\n');
+			}
+		}
+	}
+
 	if (!block) return content;
 
 	if (beforeMarker && content.includes(beforeMarker)) {
@@ -68,6 +84,14 @@ function upsertManagedBlock(content: string, startMarker: string, endMarker: str
 	}
 
 	return content.length > 0 ? `${block}\n\n${content}` : block;
+}
+
+function renderDailyNoteTemplate(template: string, title: string, content: string, todayISO: string): string {
+	const safeTemplate = template.trim().length > 0 ? template : '{title}\n{content}';
+	return safeTemplate
+		.split('{title}').join(title)
+		.split('{content}').join(content)
+		.split('{date}').join(todayISO);
 }
 
 async function buildDailyMessageBlock(plugin: LifequestPlugin, todayISO: string): Promise<string | null> {
@@ -120,29 +144,69 @@ function shouldIncludeToday(quest: Quest, today: string): boolean {
 	}
 }
 
+type QuestBlockOptions = {
+	groupByArea: boolean;
+	onlyPending: boolean;
+	template: string;
+};
+
 /**
  * Generates the quest block content (lines between markers).
  */
-function buildQuestBlock(data: LifequestData, today: string): string {
+export function buildQuestBlock(data: LifequestData, today: string, options?: Partial<QuestBlockOptions>): string {
 	const { quests, activityLog } = data;
-	const todayQuests = quests.filter((q: Quest) => shouldIncludeToday(q, today));
-
-	if (todayQuests.length === 0) {
-		const lang = data.settings.language ?? 'es';
-		return `${QUEST_BLOCK_START}\n${t('daily_note_empty_block', lang)}\n${QUEST_BLOCK_END}`;
-	}
-
-	const logsToday = activityLog.filter((l: LogEntry) => 
-		l.timestamp.startsWith(today) && 
+	const settings: QuestBlockOptions = {
+		groupByArea: data.settings.dailyNoteGroupByArea,
+		onlyPending: data.settings.dailyNoteOnlyPending,
+		template: data.settings.dailyNoteTemplate,
+		...options,
+	};
+	const logsToday = activityLog.filter((l: LogEntry) =>
+		l.timestamp.startsWith(today) &&
 		l.type === 'quest_completed'
 	);
+	let todayQuests = quests.filter((q: Quest) => shouldIncludeToday(q, today));
 
-	const lines = todayQuests.map((q: Quest) => {
-		const isDone = logsToday.some((l: LogEntry) => l.questId === q.id);
-		return buildQuestLine(q, isDone);
-	}).join('\n');
+	if (settings.onlyPending) {
+		todayQuests = todayQuests.filter((quest) => !logsToday.some((log) => log.questId === quest.id));
+	}
 
-	return `${QUEST_BLOCK_START}\n${lines}\n${QUEST_BLOCK_END}`;
+	const title = getDailyQuestHeading(data);
+	if (todayQuests.length === 0) {
+		const lang = data.settings.language ?? 'es';
+		const emptyContent = renderDailyNoteTemplate(settings.template, title, t('daily_note_empty_block', lang), today);
+		return `${QUEST_BLOCK_START}\n${emptyContent}\n${QUEST_BLOCK_END}`;
+	}
+
+	const renderQuest = (quest: Quest): string => {
+		const isDone = logsToday.some((l: LogEntry) => l.questId === quest.id);
+		return buildQuestLine(quest, isDone);
+	};
+
+	let blockContent = '';
+	if (settings.groupByArea) {
+		const areaOrder = new Map(data.settings.lifeAreas.map((lifeArea, index) => [lifeArea.id, index]));
+		const grouped = new Map<string, Quest[]>();
+		for (const quest of todayQuests) {
+			const areaQuests = grouped.get(quest.area) ?? [];
+			areaQuests.push(quest);
+			grouped.set(quest.area, areaQuests);
+		}
+		blockContent = Array.from(grouped.entries())
+			.sort((a, b) => (areaOrder.get(a[0]) ?? Number.MAX_SAFE_INTEGER) - (areaOrder.get(b[0]) ?? Number.MAX_SAFE_INTEGER))
+			.map(([areaId, areaQuests]) => {
+				const area = data.settings.lifeAreas.find((lifeArea) => lifeArea.id === areaId);
+				const heading = `### ${areaEmoji(areaId)} ${area?.name ?? areaId}`;
+				const lines = areaQuests.map(renderQuest).join('\n');
+				return `${heading}\n${lines}`;
+			})
+			.join('\n\n');
+	} else {
+		blockContent = todayQuests.map(renderQuest).join('\n');
+	}
+
+	const rendered = renderDailyNoteTemplate(settings.template, title, blockContent, today);
+	return `${QUEST_BLOCK_START}\n${rendered}\n${QUEST_BLOCK_END}`;
 }
 
 /**
@@ -158,10 +222,15 @@ export async function generateDailyNote(plugin: LifequestPlugin): Promise<void> 
 		const now      = moment();
 		const today    = now.format(fmt);
 		const todayISO = now.format('YYYY-MM-DD');
-		const activeQuests = data.quests.filter(q => q.status === 'active');
-		if (activeQuests.length === 0) {
-			new Notice(t('daily_note_no_quests', lang), 4000);
-		}
+			const activeQuests = data.quests.filter(q => q.status === 'active');
+			const todayQuests = data.quests.filter((quest) => shouldIncludeToday(quest, todayISO));
+			const completedToday = data.activityLog.filter((log) =>
+				log.timestamp.startsWith(todayISO) &&
+				log.type === 'quest_completed'
+			);
+			if (activeQuests.length === 0) {
+				new Notice(t('daily_note_no_quests', lang), 4000);
+			}
 
 		let file: TFile | null = null;
 		const all = app.vault.getMarkdownFiles();
@@ -186,7 +255,9 @@ export async function generateDailyNote(plugin: LifequestPlugin): Promise<void> 
 		await app.vault.modify(file, content);
 		await app.workspace.getLeaf(false).openFile(file);
 
-		const questCount = activeQuests.length;
+		const questCount = data.settings.dailyNoteOnlyPending
+			? todayQuests.filter((quest) => !completedToday.some((log) => log.questId === quest.id)).length
+			: todayQuests.length;
 		new Notice(
 			questCount > 0
 				? t('daily_note_injected', lang, { count: questCount })
@@ -213,7 +284,7 @@ async function parseQuestStates(plugin: LifequestPlugin, file: TFile): Promise<M
 
 	QUEST_TAG_REGEX.lastIndex = 0;
 	while ((match = QUEST_TAG_REGEX.exec(content)) !== null) {
-		const done    = match[1] === 'x';
+		const done    = match[1]?.toLowerCase() === 'x';
 		const questId = match[2];
 		if (questId) result.set(questId, done);
 	}

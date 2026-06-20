@@ -590,6 +590,32 @@
   gap: 16px;
 }
 
+.lq-onboarding-area-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lq-onboarding-area-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.lq-onboarding-area-pill:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--lq-area-accent, #7F77DD) 65%, white);
+}
+
+.lq-onboarding-area-pill.is-active {
+  background: color-mix(in srgb, var(--lq-area-accent, #7F77DD) 16%, transparent);
+  border-color: var(--lq-area-accent, #7F77DD);
+}
+
 .lq-onboarding-card {
   padding: 18px;
 }

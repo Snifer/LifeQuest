@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.2
+
+Feature release focused on first-run experience and project planning artifacts.
+
+### Added
+
+- First-run onboarding flow to help new users configure language, hero profile, core settings, and optional add-ons.
+- A command and settings entry to reopen onboarding at any time.
+- Configurable daily note block templates with support for `{title}`, `{content}`, and `{date}` placeholders.
+- Daily note options to group quests by area and insert only pending quests.
+
+### Changed
+
+- Set English as the default language for new installations.
+- Disabled the shop add-on and dashboard coin balance by default for new installs.
+- Updated the README in both English and Spanish to document the new daily note customization options.
+
+
 ## 1.0.1
 
 Maintenance release focused on deployment and catalog-readiness updates for the Obsidian release process.

@@ -28,6 +28,9 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 
 ### Integración con daily notes
 - Genera un bloque de quests dentro de la daily note usando el formato de fecha configurado.
+- Soporta una plantilla configurable del bloque usando los placeholders `{title}`, `{content}` y `{date}`.
+- Puede agrupar quests por área de vida dentro del bloque generado.
+- Puede insertar solo quests pendientes al regenerar el bloque diario.
 - Analiza checkboxes de Markdown y sincroniza el estado de completado de vuelta en LifeQuest.
 - Aplica penalizaciones por quests no completadas del día anterior.
 - Soporta un mensaje motivacional diario opcional encima del bloque generado.

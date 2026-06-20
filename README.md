@@ -28,6 +28,9 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 
 ### Daily note integration
 - Generates a quest block inside the daily note using the configured date format.
+- Supports a configurable block template with `{title}`, `{content}`, and `{date}` placeholders.
+- Can group quests by life area inside the generated block.
+- Can insert only pending quests when regenerating the daily block.
 - Parses markdown checkboxes and syncs completion state back into LifeQuest.
 - Applies penalties for missed quests from the previous day.
 - Supports an optional daily motivational message above the generated block.

@@ -1,6 +1,6 @@
 import { Modal, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
-import type { HeroClass, PluginSettings } from '../types';
+import type { HeroClass, LifeArea, PluginSettings } from '../types';
 import { pick } from '../i18n';
 
 const ACCENT_COLORS = ['#7F77DD', '#E05A47', '#4ade80', '#fbbf24', '#60a5fa'];
@@ -9,6 +9,7 @@ type OnboardingDraft = {
 	language: PluginSettings['language'];
 	heroName: string;
 	motto: string;
+	selectedAreaIds: string[];
 	classId: string;
 	accentColor: string;
 	dailyNoteFormat: string;
@@ -28,11 +29,12 @@ export class OnboardingModal extends Modal {
 		super(plugin.app);
 		this.plugin = plugin;
 		this.forceOpen = forceOpen;
-		this.draft = {
-			language: plugin.data.settings.language,
-			heroName: plugin.data.profile.heroName,
-			motto: plugin.data.profile.motto,
-			classId: plugin.data.profile.classId,
+			this.draft = {
+				language: plugin.data.settings.language,
+				heroName: plugin.data.profile.heroName,
+				motto: plugin.data.profile.motto,
+				selectedAreaIds: plugin.data.settings.lifeAreas.map((lifeArea) => lifeArea.id),
+				classId: plugin.data.profile.classId,
 			accentColor: plugin.data.profile.accentColor,
 			dailyNoteFormat: plugin.data.settings.dailyNoteFormat,
 			xpPerLevel: plugin.data.settings.xpPerLevel,
@@ -170,9 +172,42 @@ export class OnboardingModal extends Modal {
 			this.draft.motto = mottoInput.value;
 		});
 
+		const areasSection = container.createDiv({ cls: 'lq-form-section' });
+		areasSection.createEl('p', { text: this.tr('Áreas base', 'Base life areas'), cls: 'lq-section-title' });
+		areasSection.createEl('p', {
+			text: this.tr(
+				'Elige las áreas principales con las que quieres comenzar.',
+				'Choose the main life areas you want to start with.'
+			),
+			cls: 'lq-settings-subtitle',
+		});
+		const areaGrid = areasSection.createDiv({ cls: 'lq-onboarding-area-grid' });
+		this.plugin.data.settings.lifeAreas.forEach((lifeArea) => {
+			const pill = areaGrid.createEl('button', {
+				text: lifeArea.name,
+				cls: 'lq-onboarding-area-pill',
+			});
+			pill.type = 'button';
+			pill.setCssProps({ '--lq-area-accent': lifeArea.color });
+			if (this.draft.selectedAreaIds.includes(lifeArea.id)) pill.addClass('is-active');
+			pill.addEventListener('click', () => {
+				this.toggleArea(lifeArea);
+			});
+		});
+
 		const classSection = container.createDiv({ cls: 'lq-form-section' });
 		classSection.createEl('p', { text: this.tr('Clase inicial', 'Starting class'), cls: 'lq-section-title' });
-		this.plugin.data.settings.heroClasses.forEach((heroClass) => {
+		const availableClasses = this.availableHeroClasses();
+		if (availableClasses.length === 0) {
+			classSection.createEl('p', {
+				text: this.tr(
+					'Selecciona al menos un área compatible con una clase para continuar.',
+					'Select at least one area that matches a hero class to continue.'
+				),
+				cls: 'lq-settings-subtitle',
+			});
+		}
+		availableClasses.forEach((heroClass) => {
 			const card = classSection.createDiv({ cls: 'lq-class-card' });
 			if (this.draft.classId === heroClass.id) card.addClass('active');
 			card.createDiv({ cls: 'lq-class-icon', text: '🛡' });
@@ -266,6 +301,7 @@ export class OnboardingModal extends Modal {
 		[
 			`${this.tr('Idioma', 'Language')}: ${this.draft.language === 'es' ? 'Español' : 'English'}`,
 			`${this.tr('Héroe', 'Hero')}: ${this.draft.heroName || this.tr('Sin nombre aún', 'No name yet')}`,
+			`${this.tr('Áreas', 'Areas')}: ${this.selectedAreas().map((area) => area.name).join(', ') || '—'}`,
 			`${this.tr('Clase', 'Class')}: ${this.currentClass()?.name ?? '—'}`,
 			`${this.tr('Formato diario', 'Daily format')}: ${this.draft.dailyNoteFormat}`,
 			`${this.tr('Tienda', 'Shop')}: ${this.draft.shopEnabled ? this.tr('Activa', 'Enabled') : this.tr('Desactivada', 'Disabled')}`,
@@ -322,9 +358,19 @@ export class OnboardingModal extends Modal {
 	}
 
 	private validateStep(): boolean {
-		if (this.step === 1 && !this.draft.heroName.trim()) {
-			new Notice(this.tr('Escribe un nombre para tu héroe.', 'Enter a name for your hero.'));
-			return false;
+		if (this.step === 1) {
+			if (!this.draft.heroName.trim()) {
+				new Notice(this.tr('Escribe un nombre para tu héroe.', 'Enter a name for your hero.'));
+				return false;
+			}
+			if (this.draft.selectedAreaIds.length === 0) {
+				new Notice(this.tr('Selecciona al menos un área de vida.', 'Select at least one life area.'));
+				return false;
+			}
+			if (this.availableHeroClasses().length === 0) {
+				new Notice(this.tr('Selecciona al menos un área compatible con una clase.', 'Select at least one area that supports a hero class.'));
+				return false;
+			}
 		}
 		if (this.step === 2) {
 			if (!this.draft.dailyNoteFormat.trim()) {
@@ -354,6 +400,14 @@ export class OnboardingModal extends Modal {
 		this.plugin.data.settings.language = this.draft.language;
 		this.plugin.data.profile.heroName = this.draft.heroName.trim() || this.plugin.data.profile.heroName;
 		this.plugin.data.profile.motto = this.draft.motto.trim();
+		const selectedAreas = this.selectedAreas();
+		this.plugin.data.settings.lifeAreas = selectedAreas;
+		this.plugin.data.settings.heroClasses = this.plugin.data.settings.heroClasses.filter((heroClass) =>
+			selectedAreas.some((lifeArea) => lifeArea.id === heroClass.bonusAreaId)
+		);
+		if (!this.plugin.data.settings.heroClasses.some((heroClass) => heroClass.id === this.draft.classId)) {
+			this.draft.classId = this.plugin.data.settings.heroClasses[0]?.id ?? this.draft.classId;
+		}
 		this.plugin.data.profile.classId = this.draft.classId;
 		this.plugin.data.profile.accentColor = this.draft.accentColor;
 		this.plugin.data.settings.dailyNoteFormat = this.draft.dailyNoteFormat.trim() || this.plugin.data.settings.dailyNoteFormat;
@@ -367,12 +421,35 @@ export class OnboardingModal extends Modal {
 	}
 
 	private currentClass(): HeroClass | undefined {
-		return this.plugin.data.settings.heroClasses.find((heroClass) => heroClass.id === this.draft.classId);
+		return this.availableHeroClasses().find((heroClass) => heroClass.id === this.draft.classId);
 	}
 
 	private describeHeroClass(heroClass: HeroClass): string {
-		const area = this.plugin.data.settings.lifeAreas.find((lifeArea) => lifeArea.id === heroClass.bonusAreaId);
+		const area = this.selectedAreas().find((lifeArea) => lifeArea.id === heroClass.bonusAreaId)
+			?? this.plugin.data.settings.lifeAreas.find((lifeArea) => lifeArea.id === heroClass.bonusAreaId);
 		return this.tr(`+20% XP en ${area?.name ?? 'un área'}`, `+20% XP in ${area?.name ?? 'one area'}`);
+	}
+
+	private selectedAreas(): LifeArea[] {
+		return this.plugin.data.settings.lifeAreas.filter((lifeArea) => this.draft.selectedAreaIds.includes(lifeArea.id));
+	}
+
+	private availableHeroClasses(): HeroClass[] {
+		return this.plugin.data.settings.heroClasses.filter((heroClass) =>
+			this.draft.selectedAreaIds.includes(heroClass.bonusAreaId)
+		);
+	}
+
+	private toggleArea(lifeArea: LifeArea): void {
+		if (this.draft.selectedAreaIds.includes(lifeArea.id)) {
+			this.draft.selectedAreaIds = this.draft.selectedAreaIds.filter((areaId) => areaId !== lifeArea.id);
+		} else {
+			this.draft.selectedAreaIds = [...this.draft.selectedAreaIds, lifeArea.id];
+		}
+		if (!this.availableHeroClasses().some((heroClass) => heroClass.id === this.draft.classId)) {
+			this.draft.classId = this.availableHeroClasses()[0]?.id ?? this.draft.classId;
+		}
+		this.render();
 	}
 
 	private makeToggle(
