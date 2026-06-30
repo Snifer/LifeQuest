@@ -29,11 +29,11 @@ export function calculateXP(quest: Quest, completed: boolean, data: LifequestDat
 
 /**
  * Calcula el nivel basado en el XP acumulado.
- * Nivel = 1 + floor(XP / xpPerLevel)
+ * Nivel = 1 + floor(sqrt(XP / xpPerLevel))
  */
 export function calculateLevel(totalXP: number, xpPerLevel = 500): number {
 	if (totalXP <= 0) return 1;
-	const lvl = 1 + Math.floor(totalXP / xpPerLevel);
+	const lvl = 1 + Math.floor(Math.sqrt(totalXP / xpPerLevel));
 	return Math.min(lvl, 100); // Cap at 100
 }
 
@@ -41,11 +41,15 @@ export function calculateLevel(totalXP: number, xpPerLevel = 500): number {
  * Calcula cuánto XP falta para el siguiente nivel.
  */
 export function getXPToNextLevel(totalXP: number, xpPerLevel = 500): number {
-	if (totalXP < 0) return xpPerLevel;
-	if (calculateLevel(totalXP, xpPerLevel) >= 100) return 0;
+	const currentLevel = calculateLevel(totalXP, xpPerLevel);
+	if (currentLevel >= 100) return 0;
+
+	// Invert the formula to find the exact absolute XP milestone for the next level
+	// Next Level XP Milestone = (Next Level - 1)^2 * xpPerLevel
+	const nextLevel = currentLevel + 1;
+	const nextLevelTotalXPNeeded = Math.pow(nextLevel - 1, 2) * xpPerLevel;
 	
-	const progress = totalXP % xpPerLevel;
-	return progress === 0 ? xpPerLevel : xpPerLevel - progress;
+	return nextLevelTotalXPNeeded - Math.max(0, totalXP);
 }
 
 export function getLevelTitle(level: number, lang: SupportedLanguage = 'es'): string {
