@@ -1,13 +1,14 @@
 # Changelog
 
-## 1.0.4
+## 1.0.5
 
-Fixed lint Obsidian Warnings
+Fixed lint Obsidian warnings and workflow release extraction.
 
-### Changed 
+### Changed
 
-- Updated plugin version metadata for the `1.0.4` release.
-- Fixed all issues lint Obsidian
+- Updated plugin version metadata for the `1.0.5` release.
+- Fixed all linting issues related to TypeScript library configuration.
+- Made the release notes extraction script more robust in GitHub workflows.
 
 
 ## 1.0.3
