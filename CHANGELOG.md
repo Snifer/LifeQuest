@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4 
+
+Fixed lint Obsidian Warnings
+
+
+
 ## 1.0.3
 
 Maintenance release focused on progression consistency and internationalization fixes across the plugin UI.
