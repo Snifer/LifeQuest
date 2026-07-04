@@ -1,8 +1,9 @@
-import { Modal, Notice, moment } from 'obsidian';
+import { Modal, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
 import { Quest } from '../types';
 import { getLang, pick } from '../i18n';
 import { ConfirmModal } from './confirm-modal';
+import { moment } from '../obsidian-moment';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

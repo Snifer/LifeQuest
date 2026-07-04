@@ -1,4 +1,4 @@
-import { App, ButtonComponent, Notice, PluginSettingTab, Setting, moment } from 'obsidian';
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type LifequestPlugin from './main';
 import { DEFAULT_DATA, type RewardSettings, type ShopReward } from './types';
 import { executeObsidianCommand } from './command-api';
@@ -6,6 +6,7 @@ import { getLang, pick, t } from './i18n';
 import { HealthSetupModal } from './ui/health-setup';
 import { exportHealthCSV } from './ui/health-tracker';
 import { ConfirmModal } from './ui/confirm-modal';
+import { moment } from './obsidian-moment';
 
 type TranslationKey = Parameters<typeof t>[0];
 type TranslationVars = Record<string, string | number>;

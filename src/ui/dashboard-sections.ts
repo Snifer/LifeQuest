@@ -1,4 +1,4 @@
-import { moment, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
 import { LogEntry, Quest } from '../types';
 import { 
@@ -19,6 +19,7 @@ import { generateDailyNote } from '../daily-note';
 import { ProfileEditorModal } from './profile-editor';
 import { HealthSetupModal } from './health-setup';
 import { calculateHealthMetrics, needsWeighIn } from '../core/health-engine';
+import { moment } from '../obsidian-moment';
 
 type QuestStatus = 'done' | 'failed' | 'pending';
 type TranslationKey = Parameters<typeof t>[0];

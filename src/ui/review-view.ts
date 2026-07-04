@@ -1,8 +1,9 @@
-import { ItemView, WorkspaceLeaf, moment, Notice } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
 import { generateWeekStats, generateInsights, earnCoins, calculateCoinReward } from '../engine';
 import { WeeklyReview, WeeklyStats } from '../types';
 import { getLang, pick, t } from '../i18n';
+import { moment } from '../obsidian-moment';
 
 export const VIEW_TYPE_WEEKLY_REVIEW = 'lifequest-weekly-review';
 type TranslationKey = Parameters<typeof t>[0];

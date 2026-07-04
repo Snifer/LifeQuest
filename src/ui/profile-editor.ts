@@ -1,8 +1,9 @@
-import { Modal, Notice, moment } from 'obsidian';
+import { Modal, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
 import type { Profile } from '../types';
 import { getStreakMultiplier, getXPToNextLevel, getLevelTitle } from '../engine';
 import { getLang, pick } from '../i18n';
+import { moment } from '../obsidian-moment';
 
 const ACCENT_COLORS = ['#7F77DD', '#E05A47', '#4ade80', '#fbbf24', '#60a5fa'];
 

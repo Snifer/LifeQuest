@@ -1,6 +1,7 @@
-import { TFile, Notice, moment, requestUrl } from 'obsidian';
+import { TFile, Notice, requestUrl } from 'obsidian';
 import type LifequestPlugin from './main';
 import { Quest, LifequestData, LogEntry } from './types';
+import { moment } from './obsidian-moment';
 import {
 	calculateXP,
 	calculateLevel,

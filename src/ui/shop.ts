@@ -1,9 +1,10 @@
-import { ItemView, WorkspaceLeaf, Notice, moment } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
 import { spendCoins, canAffordReward } from '../engine';
 import type { CoinEntry, RewardCategory, ShopReward } from '../types';
 import { getLang, pick, t } from '../i18n';
 import { ConfirmModal } from './confirm-modal';
+import { moment } from '../obsidian-moment';
 
 export const SHOP_VIEW_TYPE = 'lifequest-shop';
 
@@ -248,7 +249,8 @@ export class ShopView extends ItemView {
 
 			const info = row.createDiv({ cls: 'lq-history-info' });
 			info.createDiv({ cls: 'lq-history-label', text: entry.label });
-			info.createDiv({ cls: 'lq-history-date', text: moment(entry.timestamp).locale(getLang(this.plugin)).fromNow() });
+			const relativeDate: string = moment(entry.timestamp).locale(getLang(this.plugin)).fromNow();
+			info.createDiv({ cls: 'lq-history-date', text: relativeDate });
 
 			row.createDiv({
 				cls: `lq-history-val ${entry.type}`,

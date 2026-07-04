@@ -103,14 +103,14 @@ export default class LifequestPlugin extends Plugin {
 
 		const msUntil = nextWeighIn.getTime() - now.getTime();
 
-			this.registerInterval(
-			window.setTimeout(() => {
-				if (needsWeighIn(health.entries, profile.weighInDay, new Date())) {
-						const lang = getLang(this);
-						new Notice(pick(lang, '⚖️ LifeQuest: Es tu día de registro de peso. Abre el seguimiento de salud para registrar.', '⚖️ LifeQuest: It is your weigh-in day. Open health tracking to log it.'), 8000);
-				}
-			}, msUntil) as unknown as number
-		);
+		const timeoutId = window.setTimeout(() => {
+			if (needsWeighIn(health.entries, profile.weighInDay, new Date())) {
+				const lang = getLang(this);
+				new Notice(pick(lang, '⚖️ LifeQuest: Es tu día de registro de peso. Abre el seguimiento de salud para registrar.', '⚖️ LifeQuest: It is your weigh-in day. Open health tracking to log it.'), 8000);
+			}
+		}, msUntil);
+
+		this.registerInterval(timeoutId);
 	}
 
 	onunload() {
