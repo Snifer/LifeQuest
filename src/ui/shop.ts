@@ -130,7 +130,7 @@ export class ShopView extends ItemView {
 
 		categories.forEach((category) => {
 			const btn = filters.createEl('button', {
-				text: category === 'all' ? this.tr('shop_all') : this.getCategoryLabel(category as RewardCategory),
+				text: category === 'all' ? this.tr('shop_all') : this.getCategoryLabel(category),
 				cls: 'lq-filter-pill',
 			});
 			if (this.activeCategory === category) btn.classList.add('active');
