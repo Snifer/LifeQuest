@@ -4,6 +4,10 @@
 
 Fixed lint Obsidian Warnings
 
+### Changed 
+
+- Updated plugin version metadata for the `1.0.4` release.
+- Fixed all issues lint Obsidian
 
 
 ## 1.0.3
