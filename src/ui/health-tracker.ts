@@ -31,6 +31,19 @@ export class HealthTrackerView extends ItemView {
     return t(first as TranslationKey, lang, second);
   }
 
+  private getGoalTypeLabel(goalType: HealthProfile['goalType']): string {
+    switch (goalType) {
+      case 'lose_weight':
+        return this.tr('Perder peso', 'Lose weight');
+      case 'gain_weight':
+        return this.tr('Ganar peso/masa', 'Gain weight/mass');
+      case 'maintain':
+        return this.tr('Mantenimiento', 'Maintain');
+      case 'body_recomp':
+        return this.tr('Recomposición corporal', 'Body recomposition');
+    }
+  }
+
   async onOpen(): Promise<void> {
     this.render();
   }
@@ -123,12 +136,12 @@ export class HealthTrackerView extends ItemView {
 
   private renderHeaderSection(root: HTMLElement, profile: HealthProfile, metrics: HealthMetrics): void {
     const card = root.createDiv({ cls: 'lq-card' });
-    card.createEl('p', { cls: 'lq-card-title', text: `${this.tr('health_tracking')} · ${this.tr('health_goal')}: ${profile.goalType}` });
+    card.createEl('p', { cls: 'lq-card-title', text: `${this.tr('health_tracking')} · ${this.tr('health_goal')}: ${this.getGoalTypeLabel(profile.goalType)}` });
 
     const cGroup = card.createDiv({ cls: 'lq-health-chip-group' });
     const stats = [
       [`${metrics.currentWeight} ${profile.weightUnit}`, this.tr('health_current')],
-      [`${metrics.bmi}`, 'IMC'],
+      [`${metrics.bmi}`, this.tr('IMC', 'BMI')],
       [`${metrics.totalChange > 0 ? '+' : ''}${metrics.totalChange} ${profile.weightUnit}`, this.tr('health_since_start')]
     ];
 

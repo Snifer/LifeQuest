@@ -174,7 +174,7 @@ function renderProfile(el: HTMLElement, data: LifequestData): void {
   info.createEl('span', { cls: 'lq-widget-hero-name', text: profile.heroName });
   info.createEl('span', {
     cls: 'lq-widget-level-badge',
-    text: tr(data, `Nivel ${xp.level} · ${getLevelTitle(xp.level)}`, `Level ${xp.level} · ${getLevelTitle(xp.level)}`),
+    text: tr(data, `Nivel ${xp.level} · ${getLevelTitle(xp.level, getLang(data))}`, `Level ${xp.level} · ${getLevelTitle(xp.level, getLang(data))}`),
   });
   info.createEl('span', {
     cls: 'lq-widget-streak-badge',

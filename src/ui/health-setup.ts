@@ -56,6 +56,19 @@ export class HealthSetupModal extends Modal {
     return t(first as TranslationKey, lang, second);
   }
 
+  private getGoalTypeLabel(goalType: NonNullable<HealthProfile['goalType']>): string {
+    switch (goalType) {
+      case 'lose_weight':
+        return this.tr('Perder peso', 'Lose weight');
+      case 'gain_weight':
+        return this.tr('Ganar peso/masa', 'Gain weight/mass');
+      case 'maintain':
+        return this.tr('Mantenimiento', 'Maintain');
+      case 'body_recomp':
+        return this.tr('Recomposición corporal', 'Body recomposition');
+    }
+  }
+
   private renderStep(): void {
     this.contentEl.empty();
     
@@ -246,7 +259,7 @@ export class HealthSetupModal extends Modal {
     summary.createEl('strong', { text: `${this.tr('Resumen', 'Summary')}:` });
     summary.createEl('br');
     summary.createSpan({
-      text: `${this.tr('Meta', 'Goal')}: ${this.draft.goalType} ${this.tr('hasta', 'to')} ${this.draft.targetWeight} ${this.draft.weightUnit}`
+      text: `${this.tr('Meta', 'Goal')}: ${this.getGoalTypeLabel(this.draft.goalType || 'lose_weight')} ${this.tr('hasta', 'to')} ${this.draft.targetWeight} ${this.draft.weightUnit}`
     });
     summary.createEl('br');
     summary.createSpan({

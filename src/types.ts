@@ -237,10 +237,136 @@ export interface PluginSettings {
 	};
 }
 
+type LocalizedDefaultsLanguage = 'en' | 'es';
+
+const DEFAULT_HERO_NAMES: Record<LocalizedDefaultsLanguage, string> = {
+	en: 'Hero',
+	es: 'Héroe',
+};
+
+const DEFAULT_LIFE_AREAS: Record<LocalizedDefaultsLanguage, LifeArea[]> = {
+	en: [
+		{ id: 'health', name: 'Health', color: '#E05A47' },
+		{ id: 'work', name: 'Work', color: '#478EE0' },
+		{ id: 'learning', name: 'Learning', color: '#E0B347' },
+		{ id: 'relationships', name: 'Relationships', color: '#9A47E0' },
+		{ id: 'finances', name: 'Finances', color: '#47E082' },
+	],
+	es: [
+		{ id: 'health', name: 'Salud', color: '#E05A47' },
+		{ id: 'work', name: 'Trabajo', color: '#478EE0' },
+		{ id: 'learning', name: 'Aprendizaje', color: '#E0B347' },
+		{ id: 'relationships', name: 'Relaciones', color: '#9A47E0' },
+		{ id: 'finances', name: 'Finanzas', color: '#47E082' },
+	],
+};
+
+const DEFAULT_HERO_CLASSES: Record<LocalizedDefaultsLanguage, HeroClass[]> = {
+	en: [
+		{ id: 'explorer', name: 'Explorer', bonusAreaId: 'learning', description: 'Bonus in Learning' },
+		{ id: 'warrior', name: 'Warrior', bonusAreaId: 'health', description: 'Bonus in Health' },
+		{ id: 'artisan', name: 'Artisan', bonusAreaId: 'work', description: 'Bonus in Work' },
+		{ id: 'diplomat', name: 'Diplomat', bonusAreaId: 'relationships', description: 'Bonus in Relationships' },
+	],
+	es: [
+		{ id: 'explorer', name: 'Explorador', bonusAreaId: 'learning', description: 'Bono en Aprendizaje' },
+		{ id: 'warrior', name: 'Guerrero', bonusAreaId: 'health', description: 'Bono en Salud' },
+		{ id: 'artisan', name: 'Artesano', bonusAreaId: 'work', description: 'Bono en Trabajo' },
+		{ id: 'diplomat', name: 'Diplomático', bonusAreaId: 'relationships', description: 'Bono en Relaciones' },
+	],
+};
+
+const DEFAULT_SHOP_REWARDS: Record<LocalizedDefaultsLanguage, ShopReward[]> = {
+	en: [
+		{ id: 'default-1', name: 'Watch an episode guilt-free', description: 'One hour of a show just for yourself', emoji: '🎬', category: 'ocio', cost: 30, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-2', name: 'Special coffee from the café', description: 'The one I love but do not always buy', emoji: '☕', category: 'bienestar', cost: 50, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-3', name: 'Video game afternoon (2h)', description: 'No clock-watching, just enjoy it', emoji: '🎮', category: 'ocio', cost: 80, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-4', name: 'Order delivery food', description: 'No cooking that day', emoji: '🍕', category: 'ocio', cost: 120, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-5', name: 'Bath with music', description: 'A full relaxation ritual', emoji: '🛁', category: 'bienestar', cost: 40, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-6', name: 'A free day with no schedule', description: 'No goals, no quests, just exist', emoji: '🏖️', category: 'logros', cost: 200, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-7', name: 'New book or movie', description: 'Buy something I wanted for a while', emoji: '📚', category: 'ocio', cost: 70, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-8', name: 'Hangout with friends', description: 'Plan a night out', emoji: '🎉', category: 'social', cost: 150, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+	],
+	es: [
+		{ id: 'default-1', name: 'Ver un episodio sin culpa', description: 'Una hora de serie contigo mismo', emoji: '🎬', category: 'ocio', cost: 30, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-2', name: 'Café especial de la cafetería', description: 'El que me gusta pero no compro siempre', emoji: '☕', category: 'bienestar', cost: 50, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-3', name: 'Tarde de videojuegos (2h)', description: 'Sin mirar el reloj, solo disfrute', emoji: '🎮', category: 'ocio', cost: 80, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-4', name: 'Pedir comida a domicilio', description: 'Sin cocinar ese día', emoji: '🍕', category: 'ocio', cost: 120, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-5', name: 'Baño de tina con música', description: 'Ritual de relajación completo', emoji: '🛁', category: 'bienestar', cost: 40, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-6', name: 'Día libre sin agenda', description: 'Sin metas, sin quests, solo existir', emoji: '🏖️', category: 'logros', cost: 200, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-7', name: 'Nuevo libro o película', description: 'Comprar algo que quería hace tiempo', emoji: '📚', category: 'ocio', cost: 70, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+		{ id: 'default-8', name: 'Salida con amigos', description: 'Planear una noche de salida', emoji: '🎉', category: 'social', cost: 150, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
+	],
+};
+
+export function getDefaultHeroName(lang: LocalizedDefaultsLanguage): string {
+	return DEFAULT_HERO_NAMES[lang];
+}
+
+export function getDefaultLifeAreas(lang: LocalizedDefaultsLanguage): LifeArea[] {
+	return DEFAULT_LIFE_AREAS[lang].map((area) => ({ ...area }));
+}
+
+export function getDefaultHeroClasses(lang: LocalizedDefaultsLanguage): HeroClass[] {
+	return DEFAULT_HERO_CLASSES[lang].map((heroClass) => ({ ...heroClass }));
+}
+
+export function getDefaultShopRewards(lang: LocalizedDefaultsLanguage): ShopReward[] {
+	return DEFAULT_SHOP_REWARDS[lang].map((reward) => ({ ...reward }));
+}
+
+export function localizeHeroNameIfDefault(heroName: string, lang: LocalizedDefaultsLanguage): string {
+	return Object.values(DEFAULT_HERO_NAMES).includes(heroName) ? getDefaultHeroName(lang) : heroName;
+}
+
+export function localizeDefaultLifeAreas(areas: LifeArea[], lang: LocalizedDefaultsLanguage): LifeArea[] {
+	const defaultsByLang = Object.values(DEFAULT_LIFE_AREAS).flat();
+	const defaultsById = new Map(getDefaultLifeAreas(lang).map((area) => [area.id, area]));
+
+	return areas.map((area) => {
+		const target = defaultsById.get(area.id);
+		if (!target) return area;
+		const isDefaultName = defaultsByLang.some((defaultArea) => defaultArea.id === area.id && defaultArea.name === area.name);
+		return isDefaultName ? { ...area, name: target.name, color: target.color } : area;
+	});
+}
+
+export function localizeDefaultHeroClasses(heroClasses: HeroClass[], lang: LocalizedDefaultsLanguage): HeroClass[] {
+	const defaultsByLang = Object.values(DEFAULT_HERO_CLASSES).flat();
+	const defaultsById = new Map(getDefaultHeroClasses(lang).map((heroClass) => [heroClass.id, heroClass]));
+
+	return heroClasses.map((heroClass) => {
+		const target = defaultsById.get(heroClass.id);
+		if (!target) return heroClass;
+		const isDefaultCopy = defaultsByLang.some((defaultClass) =>
+			defaultClass.id === heroClass.id &&
+			defaultClass.name === heroClass.name &&
+			defaultClass.description === heroClass.description
+		);
+		return isDefaultCopy ? { ...heroClass, name: target.name, description: target.description } : heroClass;
+	});
+}
+
+export function localizeDefaultShopRewards(rewards: ShopReward[], lang: LocalizedDefaultsLanguage): ShopReward[] {
+	const defaultsByLang = Object.values(DEFAULT_SHOP_REWARDS).flat();
+	const defaultsById = new Map(getDefaultShopRewards(lang).map((reward) => [reward.id, reward]));
+
+	return rewards.map((reward) => {
+		const target = defaultsById.get(reward.id);
+		if (!target || !reward.isDefault) return reward;
+		const isDefaultCopy = defaultsByLang.some((defaultReward) =>
+			defaultReward.id === reward.id &&
+			defaultReward.name === reward.name &&
+			defaultReward.description === reward.description
+		);
+		return isDefaultCopy ? { ...reward, name: target.name, description: target.description } : reward;
+	});
+}
+
 export const DEFAULT_DATA: LifequestData = {
-	version: "1.0.2",
+	version: "1.0.3",
 	profile: {
-		heroName: "Héroe",
+		heroName: getDefaultHeroName('en'),
 		motto: "",
 		avatarBase64: null,
 		accentColor: "#7F77DD",
@@ -301,19 +427,8 @@ export const DEFAULT_DATA: LifequestData = {
 			bloodPressure: true,
 			medications: true,
 		},
-		lifeAreas: [
-			{ id: "health", name: "Salud", color: "#E05A47" },
-			{ id: "work", name: "Trabajo", color: "#478EE0" },
-			{ id: "learning", name: "Aprendizaje", color: "#E0B347" },
-			{ id: "relationships", name: "Relaciones", color: "#9A47E0" },
-			{ id: "finances", name: "Finanzas", color: "#47E082" }
-		],
-		heroClasses: [
-			{ id: "explorer", name: "Explorador", bonusAreaId: "learning", description: "Bono en Aprendizaje" },
-			{ id: "warrior", name: "Guerrero", bonusAreaId: "health", description: "Bono en Salud" },
-			{ id: "artisan", name: "Artesano", bonusAreaId: "work", description: "Bono en Trabajo" },
-			{ id: "diplomat", name: "Diplomático", bonusAreaId: "relationships", description: "Bono en Relaciones" }
-		]
+		lifeAreas: getDefaultLifeAreas('en'),
+		heroClasses: getDefaultHeroClasses('en')
 	},
 	health: {
 		enabled: false,
@@ -329,16 +444,7 @@ export const DEFAULT_DATA: LifequestData = {
 		totalSpent: 0,
 		ledger: [],
 	},
-	shop: [
-		{ id: 'default-1', name: 'Ver un episodio sin culpa', description: 'Una hora de serie contigo mismo', emoji: '🎬', category: 'ocio', cost: 30, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-2', name: 'Café especial de la cafetería', description: 'El que me gusta pero no compro siempre', emoji: '☕', category: 'bienestar', cost: 50, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-3', name: 'Tarde de videojuegos (2h)', description: 'Sin mirar el reloj, solo disfrute', emoji: '🎮', category: 'ocio', cost: 80, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-4', name: 'Pedir comida a domicilio', description: 'Sin cocinar ese día', emoji: '🍕', category: 'ocio', cost: 120, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-5', name: 'Baño de tina con música', description: 'Ritual de relajación completo', emoji: '🛁', category: 'bienestar', cost: 40, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-6', name: 'Día libre sin agenda', description: 'Sin metas, sin quests, solo existir', emoji: '🏖️', category: 'logros', cost: 200, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-7', name: 'Nuevo libro o película', description: 'Comprar algo que quería hace tiempo', emoji: '📚', category: 'ocio', cost: 70, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-		{ id: 'default-8', name: 'Salida con amigos', description: 'Planear una noche de salida', emoji: '🎉', category: 'social', cost: 150, timesRedeemed: 0, maxRedemptions: 0, createdAt: '2024-01-01', isDefault: true },
-	]
+	shop: getDefaultShopRewards('en')
 };
 
 // ─── MÓDULO DE SALUD ──────────────────────────────────────────────

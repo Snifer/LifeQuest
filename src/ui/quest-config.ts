@@ -15,16 +15,6 @@ function uuid(): string {
 
 type QuestDraft = Omit<Quest, 'createdAt' | 'lastModifiedAt'> & { createdAt?: string; lastModifiedAt?: string };
 
-const DIFFICULTY_LABELS: Record<Quest['difficulty'], string> = {
-	easy: '🟢 Easy', normal: '🟡 Normal', hard: '🔴 Hard', epic: '⚡ Epic'
-};
-const FREQ_LABELS: Record<Quest['frequency'], string> = {
-	daily: '📅 Daily', weekly: '📆 Weekly', monthly: '🗓 Monthly', free: '🎯 Free'
-};
-const REMINDER_LABELS: Record<Quest['reminder'], string> = {
-	none: 'None', morning: '🌅 Morning', evening: '🌙 Evening', custom: '⏰ Custom'
-};
-
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
 export class QuestConfigModal extends Modal {
@@ -62,11 +52,43 @@ export class QuestConfigModal extends Modal {
 
 	onClose(): void { this.contentEl.empty(); }
 
+	private tr(esText: string, enText: string): string {
+		return pick(getLang(this.plugin), esText, enText);
+	}
+
+	private getDifficultyLabels(): Record<Quest['difficulty'], string> {
+		return {
+			easy: this.tr('🟢 Fácil', '🟢 Easy'),
+			normal: this.tr('🟡 Normal', '🟡 Normal'),
+			hard: this.tr('🔴 Difícil', '🔴 Hard'),
+			epic: this.tr('⚡ Épica', '⚡ Epic'),
+		};
+	}
+
+	private getFrequencyLabels(): Record<Quest['frequency'], string> {
+		return {
+			daily: this.tr('📅 Diaria', '📅 Daily'),
+			weekly: this.tr('📆 Semanal', '📆 Weekly'),
+			monthly: this.tr('🗓 Mensual', '🗓 Monthly'),
+			free: this.tr('🎯 Libre', '🎯 Free'),
+		};
+	}
+
+	private getReminderLabels(): Record<Quest['reminder'], string> {
+		return {
+			none: this.tr('Ninguno', 'None'),
+			morning: this.tr('🌅 Mañana', '🌅 Morning'),
+			evening: this.tr('🌙 Noche', '🌙 Evening'),
+			custom: this.tr('⏰ Personalizado', '⏰ Custom'),
+		};
+	}
+
 	// ── Quest List Panel ──────────────────────────────────────────────────────
 	private renderList(): void {
 		const el = this.listEl;
 		el.empty();
 		const lang = getLang(this.plugin);
+		const frequencyLabels = this.getFrequencyLabels();
 
 		el.createEl('h3', { text: pick(lang, 'Quests', 'Quests'), cls: 'lq-section-title' });
 
@@ -88,7 +110,7 @@ export class QuestConfigModal extends Modal {
 			const title = info.createDiv({ cls: 'lq-quest-list-title' });
 			title.textContent = quest.title;
 			const sub = info.createDiv({ cls: 'lq-quest-list-sub' });
-			sub.textContent = `${FREQ_LABELS[quest.frequency]} · ${quest.xp} XP`;
+			sub.textContent = `${frequencyLabels[quest.frequency]} · ${quest.xp} XP`;
 
 			const actions = row.createDiv({ cls: 'lq-quest-list-actions' });
 
@@ -197,19 +219,22 @@ export class QuestConfigModal extends Modal {
 
 		const d = this.draft;
 		const isNew = !this.editingId;
+		const frequencyLabels = this.getFrequencyLabels();
+		const difficultyLabels = this.getDifficultyLabels();
+		const reminderLabels = this.getReminderLabels();
 
-		el.createEl('h3', { text: isNew ? 'New quest' : 'Edit quest', cls: 'lq-section-title' });
+		el.createEl('h3', { text: isNew ? this.tr('Nueva quest', 'New quest') : this.tr('Editar quest', 'Edit quest'), cls: 'lq-section-title' });
 
 		// Title
-		el.createEl('label', { text: 'Title *', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Título *', 'Title *'), cls: 'lq-label' });
 		const titleInput = el.createEl('input', { cls: 'lq-input' });
-		titleInput.placeholder = 'Quest title';
+		titleInput.placeholder = this.tr('Título de la quest', 'Quest title');
 		titleInput.value = d.title;
 		titleInput.maxLength = 60;
 		titleInput.addEventListener('input', () => { d.title = titleInput.value; this.updatePreviewRow(previewRow); });
 
 		// Area pills
-		el.createEl('label', { text: 'Life area', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Área de vida', 'Life area'), cls: 'lq-label' });
 		const areaRow = el.createDiv({ cls: 'lq-tone-row' });
 		this.plugin.data.settings.lifeAreas.forEach(area => {
 			const pill = areaRow.createEl('button', { text: area.name, cls: 'lq-tone-btn' });
@@ -228,10 +253,10 @@ export class QuestConfigModal extends Modal {
 		});
 
 		// Frequency
-		el.createEl('label', { text: 'Frequency', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Frecuencia', 'Frequency'), cls: 'lq-label' });
 		const freqRow = el.createDiv({ cls: 'lq-tone-row' });
-		(Object.keys(FREQ_LABELS) as Quest['frequency'][]).forEach(f => {
-			const btn = freqRow.createEl('button', { text: FREQ_LABELS[f], cls: 'lq-tone-btn' });
+		(Object.keys(frequencyLabels) as Quest['frequency'][]).forEach(f => {
+			const btn = freqRow.createEl('button', { text: frequencyLabels[f], cls: 'lq-tone-btn' });
 			if (d.frequency === f) btn.classList.add('active');
 			btn.addEventListener('click', () => {
 				freqRow.querySelectorAll('.lq-tone-btn').forEach(b => b.classList.remove('active'));
@@ -241,33 +266,33 @@ export class QuestConfigModal extends Modal {
 		});
 
 		// XP slider
-		el.createEl('label', { text: `XP Reward: ${d.xp}`, cls: 'lq-label', attr: { id: 'lq-xp-label' } });
+		el.createEl('label', { text: this.tr(`Recompensa XP: ${d.xp}`, `XP Reward: ${d.xp}`), cls: 'lq-label', attr: { id: 'lq-xp-label' } });
 		const xpSlider = el.createEl('input', { cls: 'lq-slider' });
 		xpSlider.type = 'range'; xpSlider.min = '5'; xpSlider.max = '100'; xpSlider.step = '5';
 		xpSlider.value = String(d.xp);
 		xpSlider.addEventListener('input', () => {
 			d.xp = Number(xpSlider.value);
 			const xpLabel = el.querySelector('#lq-xp-label');
-			if (xpLabel instanceof HTMLElement) xpLabel.textContent = `XP Reward: ${d.xp}`;
+			if (xpLabel instanceof HTMLElement) xpLabel.textContent = this.tr(`Recompensa XP: ${d.xp}`, `XP Reward: ${d.xp}`);
 			this.updatePreviewRow(previewRow);
 		});
 
 		// Penalty slider
-		el.createEl('label', { text: `Penalty: ${d.penalty}`, cls: 'lq-label', attr: { id: 'lq-pen-label' } });
+		el.createEl('label', { text: this.tr(`Penalización: ${d.penalty}`, `Penalty: ${d.penalty}`), cls: 'lq-label', attr: { id: 'lq-pen-label' } });
 		const penSlider = el.createEl('input', { cls: 'lq-slider' });
 		penSlider.type = 'range'; penSlider.min = '0'; penSlider.max = '50'; penSlider.step = '5';
 		penSlider.value = String(d.penalty);
 		penSlider.addEventListener('input', () => {
 			d.penalty = Number(penSlider.value);
 			const penaltyLabel = el.querySelector('#lq-pen-label');
-			if (penaltyLabel instanceof HTMLElement) penaltyLabel.textContent = `Penalty: ${d.penalty}`;
+			if (penaltyLabel instanceof HTMLElement) penaltyLabel.textContent = this.tr(`Penalización: ${d.penalty}`, `Penalty: ${d.penalty}`);
 		});
 
 		// Difficulty
-		el.createEl('label', { text: 'Difficulty', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Dificultad', 'Difficulty'), cls: 'lq-label' });
 		const diffRow = el.createDiv({ cls: 'lq-tone-row' });
-		(Object.keys(DIFFICULTY_LABELS) as Quest['difficulty'][]).forEach(diff => {
-			const btn = diffRow.createEl('button', { text: DIFFICULTY_LABELS[diff], cls: 'lq-tone-btn' });
+		(Object.keys(difficultyLabels) as Quest['difficulty'][]).forEach(diff => {
+			const btn = diffRow.createEl('button', { text: difficultyLabels[diff], cls: 'lq-tone-btn' });
 			if (d.difficulty === diff) btn.classList.add('active');
 			btn.addEventListener('click', () => {
 				diffRow.querySelectorAll('.lq-tone-btn').forEach(b => b.classList.remove('active'));
@@ -277,18 +302,18 @@ export class QuestConfigModal extends Modal {
 		});
 
 		// Reminder
-		el.createEl('label', { text: 'Reminder', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Recordatorio', 'Reminder'), cls: 'lq-label' });
 		const remSelect = el.createEl('select', { cls: 'lq-input' });
-		(Object.keys(REMINDER_LABELS) as Quest['reminder'][]).forEach(r => {
-			const opt = remSelect.createEl('option', { text: REMINDER_LABELS[r], value: r });
+		(Object.keys(reminderLabels) as Quest['reminder'][]).forEach(r => {
+			const opt = remSelect.createEl('option', { text: reminderLabels[r], value: r });
 			if (d.reminder === r) opt.selected = true;
 		});
 		remSelect.addEventListener('change', () => { d.reminder = remSelect.value as Quest['reminder']; });
 
 		// Note
-		el.createEl('label', { text: 'Note (optional)', cls: 'lq-label' });
+		el.createEl('label', { text: this.tr('Nota (opcional)', 'Note (optional)'), cls: 'lq-label' });
 		const noteInput = el.createEl('input', { cls: 'lq-input' });
-		noteInput.placeholder = 'Short note (max 80 chars)';
+		noteInput.placeholder = this.tr('Nota corta (máx. 80 caracteres)', 'Short note (max 80 chars)');
 		noteInput.maxLength = 80;
 		noteInput.value = d.note ?? '';
 		noteInput.addEventListener('input', () => { d.note = noteInput.value; });
@@ -299,14 +324,14 @@ export class QuestConfigModal extends Modal {
 
 		// Footer
 		const footer = el.createDiv({ cls: 'lq-modal-footer' });
-		const cancelBtn = footer.createEl('button', { text: 'Cancel', cls: 'lq-btn lq-btn-ghost' });
+		const cancelBtn = footer.createEl('button', { text: this.tr('Cancelar', 'Cancel'), cls: 'lq-btn lq-btn-ghost' });
 		cancelBtn.addEventListener('click', () => { this.formEl.empty(); });
 
-		const saveBtn = footer.createEl('button', { text: isNew ? 'Create quest' : 'Save quest', cls: 'lq-btn lq-btn-primary' });
+		const saveBtn = footer.createEl('button', { text: isNew ? this.tr('Crear quest', 'Create quest') : this.tr('Guardar quest', 'Save quest'), cls: 'lq-btn lq-btn-primary' });
 		saveBtn.addEventListener('click', () => {
 			void (async () => {
-			if (!d.title.trim()) { new Notice('Quest title is required'); return; }
-			if (d.xp < 5 || d.xp > 100) { new Notice('Reward points must be between 5 and 100'); return; }
+			if (!d.title.trim()) { new Notice(this.tr('El título de la quest es obligatorio', 'Quest title is required')); return; }
+			if (d.xp < 5 || d.xp > 100) { new Notice(this.tr('Los puntos de recompensa deben estar entre 5 y 100', 'Reward points must be between 5 and 100')); return; }
 
 			const now = moment().format('YYYY-MM-DD');
 			if (isNew) {
@@ -329,7 +354,7 @@ export class QuestConfigModal extends Modal {
 
 			await this.plugin.store.save(this.plugin.data);
 			this.plugin.getDashboardView()?.scheduleRefresh();
-			new Notice(isNew ? 'Quest created ✅' : 'Quest updated ✅');
+			new Notice(isNew ? this.tr('Quest creada ✅', 'Quest created ✅') : this.tr('Quest actualizada ✅', 'Quest updated ✅'));
 			this.renderList();
 			this.formEl.empty();
 			})();
@@ -346,12 +371,12 @@ export class QuestConfigModal extends Modal {
 		const dot = el.createDiv({ cls: 'lq-quest-dot' });
 		dot.setCssProps({ background: area?.color ?? '#7F77DD' });
 		const title = el.createDiv({ cls: 'lq-quest-title' });
-		title.textContent = d.title || 'Quest title…';
+		title.textContent = d.title || this.tr('Título de la quest…', 'Quest title…');
 		const xpBadge = el.createDiv({ cls: 'lq-badge-pill accent' });
 		xpBadge.textContent = `+${d.xp} XP`;
 		const penBadge = el.createDiv({ cls: 'lq-badge-pill lq-quest-preview-penalty' });
 		penBadge.textContent = `-${d.penalty}`;
 		const diffBadge = el.createDiv({ cls: 'lq-badge-pill' });
-		diffBadge.textContent = d.difficulty;
+		diffBadge.textContent = this.getDifficultyLabels()[d.difficulty];
 	}
 }

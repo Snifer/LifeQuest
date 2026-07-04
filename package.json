@@ -1,6 +1,6 @@
 {
 	"name": "lifequest",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "LifeQuest gamifies daily progress with quests, XP, reviews, and optional add-ons.",
 	"main": "main.js",
 	"type": "module",

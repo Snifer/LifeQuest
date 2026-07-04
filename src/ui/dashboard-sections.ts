@@ -161,7 +161,7 @@ export function renderTodaySummary(plugin: LifequestPlugin, el: HTMLElement): vo
 
 	const card = el.createDiv({ cls: 'lq-card' });
 	const title = card.createEl('p', { cls: 'lq-card-title' });
-	title.textContent = moment().format('dddd, D MMMM');
+	title.textContent = moment().locale(data.settings.language).format('dddd, D MMMM');
 
 	// Stat chips
 	const chipRow = card.createDiv({ cls: 'lq-chip-row' });
@@ -267,7 +267,13 @@ async function toggleQuestStatus(plugin: LifequestPlugin, quest: Quest, currentS
 
 			// 🪙 Coins for Level Up
 			if (data.settings.coinsEnabled && data.coins) {
-				data.coins = earnCoins(data.coins, 'level_up', `Nivel ${data.xp.level}`, { level: data.xp.level }, data.settings.rewardSettings);
+				data.coins = earnCoins(
+					data.coins,
+					'level_up',
+					pick(data.settings.language, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
+					{ level: data.xp.level },
+					data.settings.rewardSettings
+				);
 				if (data.settings.rewardSettings.notificationsEnabled) {
 					new Notice(t('daily_note_coins_level_up', data.settings.language, {
 						coins: calculateCoinReward('level_up', { level: data.xp.level }, data.settings.rewardSettings),
@@ -306,7 +312,15 @@ export function renderWeeklyChart(plugin: LifequestPlugin, el: HTMLElement): voi
 	const weekStart = today.clone().startOf('isoWeek');
 	const tr = createTranslator(plugin);
 
-	const shortDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+	const shortDays = [
+		tr('Lun', 'Mon'),
+		tr('Mar', 'Tue'),
+		tr('Mié', 'Wed'),
+		tr('Jue', 'Thu'),
+		tr('Vie', 'Fri'),
+		tr('Sáb', 'Sat'),
+		tr('Dom', 'Sun'),
+	];
 	const xpByDay = [0, 0, 0, 0, 0, 0, 0];
 
 	for (let i = 0; i < 7; i++) {
@@ -524,7 +538,7 @@ export function renderQuickActions(
 			const needsSetup = plugin.data.settings.healthModules.weight && !plugin.data.health?.profile;
 			actions.push([
 				'⚕️',
-				needsSetup ? tr('Configurar salud', 'Set up health') : tr('Salud', 'Health'),
+				needsSetup ? tr('ui_setup_health_tracking') : tr('health_tracking'),
 				() => onCommand('open-health'),
 			]);
 		}

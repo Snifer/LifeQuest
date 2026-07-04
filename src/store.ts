@@ -1,5 +1,12 @@
 import { App, Notice } from 'obsidian';
-import { LifequestData, DEFAULT_DATA } from './types';
+import {
+	LifequestData,
+	DEFAULT_DATA,
+	localizeDefaultHeroClasses,
+	localizeDefaultLifeAreas,
+	localizeDefaultShopRewards,
+	localizeHeroNameIfDefault,
+} from './types';
 import { getLang, pick } from './i18n';
 
 const DATA_FOLDER = '_LifeQuest';
@@ -39,6 +46,13 @@ type LegacyProfile = typeof DEFAULT_DATA.profile & {
 
 function sanitizeData(data: LifequestData): LifequestData {
 	data.xp.total = Math.max(0, data.xp.total);
+	const lang = data.settings.language ?? DEFAULT_DATA.settings.language;
+	data.profile.heroName = localizeHeroNameIfDefault(data.profile.heroName, lang);
+	data.settings.lifeAreas = localizeDefaultLifeAreas(data.settings.lifeAreas, lang);
+	data.settings.heroClasses = localizeDefaultHeroClasses(data.settings.heroClasses, lang);
+	if (data.shop) {
+		data.shop = localizeDefaultShopRewards(data.shop, lang);
+	}
 	data.settings.xpPerLevel = clampInt(data.settings.xpPerLevel, 100, 2000, DEFAULT_DATA.settings.xpPerLevel);
 	data.settings.rewardSettings.multiplier = clampNumber(data.settings.rewardSettings.multiplier, 0.5, 3.0, DEFAULT_DATA.settings.rewardSettings.multiplier);
 	data.settings.rewardSettings.levelUp.base = clampInt(data.settings.rewardSettings.levelUp.base, 0, 500, DEFAULT_DATA.settings.rewardSettings.levelUp.base);

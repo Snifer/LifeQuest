@@ -110,6 +110,19 @@ export class ShopView extends ItemView {
 		});
 	}
 
+	private getCategoryLabel(category: RewardCategory): string {
+		switch (category) {
+			case 'bienestar':
+				return this.tr('Bienestar', 'Wellness');
+			case 'ocio':
+				return this.tr('Ocio', 'Leisure');
+			case 'social':
+				return this.tr('Social', 'Social');
+			case 'logros':
+				return this.tr('Logros', 'Milestones');
+		}
+	}
+
 	private renderShopTab(parent: HTMLElement): void {
 		const { data } = this.plugin;
 		const filters = parent.createDiv({ cls: 'lq-shop-filters' });
@@ -117,7 +130,7 @@ export class ShopView extends ItemView {
 
 		categories.forEach((category) => {
 			const btn = filters.createEl('button', {
-				text: category === 'all' ? this.tr('shop_all') : category.toUpperCase(),
+				text: category === 'all' ? this.tr('shop_all') : this.getCategoryLabel(category as RewardCategory),
 				cls: 'lq-filter-pill',
 			});
 			if (this.activeCategory === category) btn.classList.add('active');
@@ -139,7 +152,7 @@ export class ShopView extends ItemView {
 			info.createDiv({ cls: 'lq-reward-desc', text: reward.description });
 
 			const footer = card.createDiv({ cls: 'lq-reward-footer' });
-			footer.createSpan({ cls: 'lq-reward-cat', text: reward.category });
+			footer.createSpan({ cls: 'lq-reward-cat', text: this.getCategoryLabel(reward.category) });
 			footer.createSpan({ cls: 'lq-reward-cost', text: `🪙 ${reward.cost}` });
 
 			const actions = card.createDiv({ cls: 'lq-reward-actions' });
@@ -235,7 +248,7 @@ export class ShopView extends ItemView {
 
 			const info = row.createDiv({ cls: 'lq-history-info' });
 			info.createDiv({ cls: 'lq-history-label', text: entry.label });
-			info.createDiv({ cls: 'lq-history-date', text: moment(entry.timestamp).fromNow() });
+			info.createDiv({ cls: 'lq-history-date', text: moment(entry.timestamp).locale(getLang(this.plugin)).fromNow() });
 
 			row.createDiv({
 				cls: `lq-history-val ${entry.type}`,
@@ -261,7 +274,7 @@ export class ShopView extends ItemView {
 
 		const catSelect = form.createEl('select');
 		SHOP_REWARD_CATEGORIES.forEach((category) => {
-			const opt = catSelect.createEl('option', { text: category.toUpperCase(), value: category });
+			const opt = catSelect.createEl('option', { text: this.getCategoryLabel(category), value: category });
 			if (isEdit) {
 				opt.selected = category === this.editingReward?.category;
 			} else {

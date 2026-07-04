@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.3
+
+Maintenance release focused on progression consistency and internationalization fixes across the plugin UI.
+
+### Changed
+
+- Updated plugin version metadata for the `1.0.3` release.
+- Accepted the level progression behavior introduced in the pull request by @lulunac27a and aligned the automated tests with the quadratic XP curve used by the engine.
+
+### Fixed
+
+- Fixed onboarding language selection so default hero data, life areas, hero classes, and default shop rewards no longer stay in Spanish after choosing English.
+- Fixed quest configuration modal copy to respect the active plugin language when creating or editing quests.
+- Fixed widget level titles so English widgets no longer show Spanish level names.
+- Fixed dashboard, weekly review, and shop relative dates to use the plugin language locale instead of the global Moment locale.
+- Fixed health tracking views and setup summaries that were exposing raw internal goal values instead of translated labels.
+- Fixed settings actions that created new areas and classes with Spanish default text even when the plugin was configured in English.
+- Closed #6.
+
+
 ## 1.0.2
 
 Feature release focused on first-run experience and project planning artifacts.

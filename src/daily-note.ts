@@ -10,7 +10,7 @@ import {
 	earnCoins,
 	calculateCoinReward
 } from './engine';
-import { t } from './i18n';
+import { pick, t } from './i18n';
 import { parseDailyMessageSource, pickDailyMessage, resolveDailyMessageSourceUrl } from './daily-message';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -352,7 +352,13 @@ async function processQuestDiff(
 
 			// 🪙 Coins for Level Up
 			if (data.settings.coinsEnabled && data.coins) {
-				data.coins = earnCoins(data.coins, 'level_up', `Nivel ${data.xp.level}`, { level: data.xp.level }, data.settings.rewardSettings);
+				data.coins = earnCoins(
+					data.coins,
+					'level_up',
+					pick(lang, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
+					{ level: data.xp.level },
+					data.settings.rewardSettings
+				);
 				if (data.settings.rewardSettings.notificationsEnabled) {
 					new Notice(t('daily_note_coins_level_up', lang, { amount: calculateCoinReward('level_up', { level: data.xp.level }, data.settings.rewardSettings) }), 3000);
 				}
@@ -383,7 +389,13 @@ async function processQuestDiff(
 	if (data.settings.coinsEnabled && data.streak.current > oldStreak && data.coins) {
 		const days = data.streak.current;
 		if (days === 7 || days === 30 || days === 100) {
-			data.coins = earnCoins(data.coins, 'streak_milestone', `${days} días`, { streakDays: days }, data.settings.rewardSettings);
+			data.coins = earnCoins(
+				data.coins,
+				'streak_milestone',
+				pick(lang, `${days} días`, `${days} days`),
+				{ streakDays: days },
+				data.settings.rewardSettings
+			);
 			if (data.settings.rewardSettings.notificationsEnabled) {
 				new Notice(t('daily_note_coins_streak', lang, { amount: calculateCoinReward('streak_milestone', { streakDays: days }, data.settings.rewardSettings) }), 4000);
 			}

@@ -1,6 +1,14 @@
 import { Modal, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
-import type { HeroClass, LifeArea, PluginSettings } from '../types';
+import {
+	localizeDefaultHeroClasses,
+	localizeDefaultLifeAreas,
+	localizeDefaultShopRewards,
+	localizeHeroNameIfDefault,
+	type HeroClass,
+	type LifeArea,
+	type PluginSettings,
+} from '../types';
 import { pick } from '../i18n';
 
 const ACCENT_COLORS = ['#7F77DD', '#E05A47', '#4ade80', '#fbbf24', '#60a5fa'];
@@ -398,11 +406,16 @@ export class OnboardingModal extends Modal {
 
 	private applyDraft(): void {
 		this.plugin.data.settings.language = this.draft.language;
-		this.plugin.data.profile.heroName = this.draft.heroName.trim() || this.plugin.data.profile.heroName;
+		this.plugin.data.profile.heroName = localizeHeroNameIfDefault(
+			this.draft.heroName.trim() || this.plugin.data.profile.heroName,
+			this.draft.language
+		);
 		this.plugin.data.profile.motto = this.draft.motto.trim();
-		const selectedAreas = this.selectedAreas();
+		const localizedAreas = localizeDefaultLifeAreas(this.plugin.data.settings.lifeAreas, this.draft.language);
+		const selectedAreas = localizedAreas.filter((lifeArea) => this.draft.selectedAreaIds.includes(lifeArea.id));
 		this.plugin.data.settings.lifeAreas = selectedAreas;
-		this.plugin.data.settings.heroClasses = this.plugin.data.settings.heroClasses.filter((heroClass) =>
+		const localizedHeroClasses = localizeDefaultHeroClasses(this.plugin.data.settings.heroClasses, this.draft.language);
+		this.plugin.data.settings.heroClasses = localizedHeroClasses.filter((heroClass) =>
 			selectedAreas.some((lifeArea) => lifeArea.id === heroClass.bonusAreaId)
 		);
 		if (!this.plugin.data.settings.heroClasses.some((heroClass) => heroClass.id === this.draft.classId)) {
@@ -415,6 +428,9 @@ export class OnboardingModal extends Modal {
 		this.plugin.data.settings.shopEnabled = this.draft.shopEnabled;
 		this.plugin.data.settings.showCoinsInDashboard = this.draft.shopEnabled && this.draft.showCoinsInDashboard;
 		this.plugin.data.settings.healthEnabled = this.draft.healthEnabled;
+		if (this.plugin.data.shop) {
+			this.plugin.data.shop = localizeDefaultShopRewards(this.plugin.data.shop, this.draft.language);
+		}
 		if (this.plugin.data.health) {
 			this.plugin.data.health.enabled = this.draft.healthEnabled;
 		}

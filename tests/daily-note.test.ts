@@ -48,8 +48,8 @@ describe('daily-note block generation', () => {
 
 		const block = buildQuestBlock(data, '2026-06-20');
 
-		expect(block).toContain('### 📚 Aprendizaje');
-		expect(block).toContain('### 🏃 Salud');
+		expect(block).toContain('### 📚 Learning');
+		expect(block).toContain('### 🏃 Health');
 	});
 
 	it('uses a custom template when provided', () => {

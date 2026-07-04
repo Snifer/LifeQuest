@@ -38,7 +38,8 @@ export class WeeklyReviewView extends ItemView {
 	}
 
 	private getWeekRange(): { start: string, end: string, label: string } {
-		const start = moment().startOf('isoWeek').add(this.weekOffset, 'weeks');
+		const lang = getLang(this.plugin);
+		const start = moment().locale(lang).startOf('isoWeek').add(this.weekOffset, 'weeks');
 		const end   = start.clone().endOf('isoWeek');
 		return {
 			start: start.format('YYYY-MM-DD'),

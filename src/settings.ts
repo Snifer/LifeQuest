@@ -115,7 +115,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 			{ id: 'hero', label: this.tr('settings_hero_areas') },
 			{ id: 'progression', label: this.tr('settings_progression') },
 			{ id: 'economy', label: this.tr('settings_economy') },
-			{ id: 'addons', label: 'Add-ons', badge: this.getAddonBadge() },
+			{ id: 'addons', label: this.tr('Add-ons', 'Add-ons'), badge: this.getAddonBadge() },
 			{ id: 'data', label: this.tr('settings_data') },
 			{ id: 'about', label: this.tr('settings_about') },
 		];
@@ -355,9 +355,10 @@ export class LifequestSettingTab extends PluginSettingTab {
 			.addButton((btn) => btn
 				.setButtonText(this.tr('+ Añadir área', '+ Add new area'))
 				.onClick(async () => {
+					const lang = getLang(this.plugin);
 					this.plugin.data.settings.lifeAreas.push({
 						id: `area-${Date.now()}`,
-						name: 'Nueva Área',
+						name: pick(lang, 'Nueva Área', 'New area'),
 						color: '#ffffff',
 					});
 					await this.plugin.store.save(this.plugin.data);
@@ -416,11 +417,12 @@ export class LifequestSettingTab extends PluginSettingTab {
 			.addButton((btn) => btn
 				.setButtonText(this.tr('+ Añadir clase', '+ Add new class'))
 				.onClick(async () => {
+					const lang = getLang(this.plugin);
 					this.plugin.data.settings.heroClasses.push({
 						id: `class-${Date.now()}`,
-						name: 'Nueva Clase',
+						name: pick(lang, 'Nueva Clase', 'New class'),
 						bonusAreaId: this.plugin.data.settings.lifeAreas[0]?.id || 'health',
-						description: 'Describe tu clase aquí',
+						description: pick(lang, 'Describe tu clase aquí', 'Describe your class here'),
 					});
 					await this.plugin.store.save(this.plugin.data);
 					this.rerender();

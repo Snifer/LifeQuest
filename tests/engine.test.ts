@@ -89,8 +89,8 @@ describe('engine.ts pure logic', () => {
 			expect(calculateLevel(0)).toBe(1);
 			expect(calculateLevel(499)).toBe(1);
 			expect(calculateLevel(500)).toBe(2);
-			expect(calculateLevel(49500)).toBe(100);
-			expect(calculateLevel(50000)).toBe(100);
+			expect(calculateLevel(49500)).toBe(10);
+			expect(calculateLevel(50000)).toBe(11);
 		});
 		it('handles negative xp gracefully', () => {
 			expect(calculateLevel(-10)).toBe(1);
@@ -102,8 +102,8 @@ describe('engine.ts pure logic', () => {
 			expect(getXPToNextLevel(0)).toBe(500);
 			expect(getXPToNextLevel(250)).toBe(250);
 			expect(getXPToNextLevel(499)).toBe(1);
-			expect(getXPToNextLevel(500)).toBe(500); // Wait, level 2 started, full 500 next
-			expect(getXPToNextLevel(49500)).toBe(0);
+			expect(getXPToNextLevel(500)).toBe(1500); // Quadratic progression: level 3 starts at 2000 XP
+			expect(getXPToNextLevel(49500)).toBe(500);
 		});
 		it('handles negative xp gracefully', () => {
 			expect(getXPToNextLevel(-10)).toBe(500);
