@@ -29,23 +29,9 @@ async function copyTextToClipboard(value: string): Promise<boolean> {
 			return true;
 		}
 	} catch {
-		// Fallback below
-	}
-
-	try {
-		const textArea = document.createElement('textarea');
-		textArea.value = value;
-		textArea.setAttribute('readonly', 'true');
-		textArea.style.position = 'fixed';
-		textArea.style.opacity = '0';
-		document.body.appendChild(textArea);
-		textArea.select();
-		const copied = document.execCommand('copy');
-		document.body.removeChild(textArea);
-		return copied;
-	} catch {
 		return false;
 	}
+	return false;
 }
 
 type QuestDraft = Omit<Quest, 'createdAt' | 'lastModifiedAt'> & { createdAt?: string; lastModifiedAt?: string };

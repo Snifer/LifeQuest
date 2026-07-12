@@ -272,7 +272,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					'One folder per line. Example: Projects or Kanban/Work. Only Markdown files inside those paths will be checked.'
 				))
 				.addTextArea((text) => text
-					.setPlaceholder('Projects\nKanban')
+					.setPlaceholder('Projects, kanban board')
 					.setValue(this.plugin.data.settings.markdownSyncFolders.join('\n'))
 					.onChange(async (val) => {
 						this.plugin.data.settings.markdownSyncFolders = val
@@ -292,7 +292,7 @@ export class LifequestSettingTab extends PluginSettingTab {
 					'One folder per line. Useful for ignoring archive, templates, or other areas that should not trigger sync.'
 				))
 				.addTextArea((text) => text
-					.setPlaceholder('_LifeQuest\nTemplates')
+					.setPlaceholder('Archive, templates')
 					.setValue(this.plugin.data.settings.markdownSyncExcludedFolders.join('\n'))
 					.onChange(async (val) => {
 						this.plugin.data.settings.markdownSyncExcludedFolders = val

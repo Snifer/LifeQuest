@@ -25,7 +25,7 @@ const QUEST_TAG_REGEX   = /^[\t >*\-+0-9.)]*\[( |x|X)\].*?#lq-([a-f0-9-]+)\b.*$/
 
 type MarkdownSyncScope = LifequestData['settings']['markdownSyncScope'];
 type PluginLanguage = LifequestData['settings']['language'];
-const INTERNAL_EXCLUDED_FOLDERS = ['_LifeQuest', '.obsidian'];
+const INTERNAL_EXCLUDED_FOLDERS = ['_LifeQuest'];
 
 /** Default emoji per well-known area id, fallback to ⭐ */
 const AREA_EMOJI: Record<string, string> = {
@@ -296,8 +296,8 @@ function getNormalizedSyncFolders(data: LifequestData): string[] {
 		.filter((path, index, arr) => path.length > 0 && arr.indexOf(path) === index);
 }
 
-function getNormalizedExcludedSyncFolders(data: LifequestData): string[] {
-	return [...INTERNAL_EXCLUDED_FOLDERS, ...data.settings.markdownSyncExcludedFolders]
+function getNormalizedExcludedSyncFolders(data: LifequestData, configDir?: string): string[] {
+	return [...INTERNAL_EXCLUDED_FOLDERS, configDir ?? '', ...data.settings.markdownSyncExcludedFolders]
 		.map(normalizeFolderPath)
 		.filter((path, index, arr) => path.length > 0 && arr.indexOf(path) === index);
 }
@@ -306,19 +306,20 @@ function isInsideTrackedFolder(filePath: string, folders: string[]): boolean {
 	return folders.some((folder) => filePath === folder || filePath.startsWith(`${folder}/`));
 }
 
-function isExcludedTrackedPath(filePath: string, data: LifequestData): boolean {
-	return isInsideTrackedFolder(filePath, getNormalizedExcludedSyncFolders(data));
+function isExcludedTrackedPath(filePath: string, data: LifequestData, configDir?: string): boolean {
+	return isInsideTrackedFolder(filePath, getNormalizedExcludedSyncFolders(data, configDir));
 }
 
 export function shouldTrackMarkdownFile(
 	filePath: string,
 	fileBasename: string,
 	data: LifequestData,
-	todayBasename: string
+	todayBasename: string,
+	configDir?: string
 ): boolean {
 	const scope: MarkdownSyncScope = data.settings.markdownSyncScope ?? 'daily-note';
 	if (!filePath.toLowerCase().endsWith('.md')) return false;
-	if (isExcludedTrackedPath(filePath, data)) return false;
+	if (isExcludedTrackedPath(filePath, data, configDir)) return false;
 
 	switch (scope) {
 		case 'vault':
@@ -570,11 +571,11 @@ async function processQuestDiff(
 
 function getTrackedMarkdownFiles(plugin: LifequestPlugin): TFile[] {
 	const fmt = plugin.data.settings.dailyNoteFormat?.trim() || 'YYYY-MM-DD';
-	const todayStr = moment().format(fmt);
+		const todayStr = moment().format(fmt);
 
 	return plugin.app.vault
 		.getMarkdownFiles()
-		.filter((file) => shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr));
+		.filter((file) => shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr, plugin.app.vault.configDir));
 }
 
 export async function refreshTrackedQuestState(plugin: LifequestPlugin): Promise<void> {
@@ -596,7 +597,7 @@ export function initDailyNoteIntegration(plugin: LifequestPlugin): void {
 			if (!(file instanceof TFile)) return;
 			const fmt      = plugin.data.settings.dailyNoteFormat?.trim() || 'YYYY-MM-DD';
 			const todayStr = moment().format(fmt);
-			if (!shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr)) return;
+			if (!shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr, plugin.app.vault.configDir)) return;
 
 			const existingDebounce = modifyDebounces.get(file.path);
 			if (existingDebounce) window.clearTimeout(existingDebounce);
