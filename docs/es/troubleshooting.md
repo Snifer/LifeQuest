@@ -23,6 +23,7 @@ Si tienes algun problema revisa si alguna de las siguientes opciones lo solucion
 - regenera el bloque si quedó inconsistente
 - si la quest está fuera de la daily note, revisa el **alcance de sincronización Markdown**
 - si usás carpetas específicas, confirma que el archivo esté dentro de una de esas rutas
+- revisa si el archivo quedó dentro de una **carpeta excluida**
 - el modo de toda la bóveda puede ser más pesado; normalmente es más seguro usar carpetas específicas
 
 ## La penalización no se aplicó desde Kanban u otra nota

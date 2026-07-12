@@ -12,6 +12,7 @@ Esta guía te lleva desde la instalación hasta tu primer flujo útil con LifeQu
 4. Crea tu primera quest
 5. Genera el bloque de la nota diaria
 6. Opcional: activa sincronización Markdown por carpetas si usás Kanban
+7. Opcional: copia el checkbox Markdown desde la UI de la quest a tu nota Kanban
 
 ## Qué es LifeQuest
 
@@ -81,8 +82,8 @@ Puedes reabrir el onboarding después desde:
 
 1. Abre el dashboard
 2. Crea 3 a 5 quests diarias simples
-3. Genera las quests de hoy en la nota diaria
-4. Márcalas durante el día
+3. Si usás Kanban, copia un checkbox de quest desde la UI a tu tablero
+4. Genera las quests de hoy en la nota diaria
 5. Revisa el dashboard por la noche
 6. Completa la revisión semanal al final de la semana
 

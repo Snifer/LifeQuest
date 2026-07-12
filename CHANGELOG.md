@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.6
+
+Feature release focused on Markdown quest sync usability, scope controls, and documentation clarity.
+
+### Added
+
+- Copy actions in quest configuration to copy either the LifeQuest tag or a ready-to-paste Markdown checkbox snippet.
+- Markdown sync excluded folders to ignore archive, templates, or other vault areas that should not trigger synchronization.
+- Persisted Markdown sync snapshot state so tracked checkbox states survive restarts more reliably.
+
+### Changed
+
+- Updated plugin version metadata for the `1.0.6` release.
+- Expanded the README and bilingual docs to explain Markdown sync scope, excluded folders, copy-to-Kanban flows, and the daily-note-only penalties limitation.
+- Continued and closed work for [issue #8](https://github.com/Snifer/LifeQuest/issues/8), originally requested by @MATUSTRM.
+
+### Fixed
+
+- Startup Markdown sync now applies the same reward pipeline as regular checkbox completion, including XP, streaks, coins, level-ups, and badges.
+- Multi-file startup sync now avoids duplicate rewards when the same quest appears in more than one tracked file.
+
 ## 1.0.5
 
 Fixed lint Obsidian warnings and workflow release extraction.

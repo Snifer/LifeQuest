@@ -14,6 +14,40 @@ function uuid(): string {
 	});
 }
 
+function buildQuestTag(questId: string): string {
+	return `#lq-${questId}`;
+}
+
+function buildQuestMarkdownCheckbox(questTitle: string, questId: string): string {
+	return `- [ ] ${questTitle.trim()} ${buildQuestTag(questId)}`.trim();
+}
+
+async function copyTextToClipboard(value: string): Promise<boolean> {
+	try {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(value);
+			return true;
+		}
+	} catch {
+		// Fallback below
+	}
+
+	try {
+		const textArea = document.createElement('textarea');
+		textArea.value = value;
+		textArea.setAttribute('readonly', 'true');
+		textArea.style.position = 'fixed';
+		textArea.style.opacity = '0';
+		document.body.appendChild(textArea);
+		textArea.select();
+		const copied = document.execCommand('copy');
+		document.body.removeChild(textArea);
+		return copied;
+	} catch {
+		return false;
+	}
+}
+
 type QuestDraft = Omit<Quest, 'createdAt' | 'lastModifiedAt'> & { createdAt?: string; lastModifiedAt?: string };
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
@@ -34,6 +68,7 @@ export class QuestConfigModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		const lang = getLang(this.plugin);
+		this.modalEl.addClass('lq-quest-modal-shell');
 		contentEl.addClass('lq-modal');
 		contentEl.createEl('h2', { text: pick(lang, 'Configuración de quests', 'Quest configuration') });
 
@@ -46,8 +81,9 @@ export class QuestConfigModal extends Modal {
 		if (this.editingId) {
 			const q = this.plugin.data.quests.find(q => q.id === this.editingId);
 			if (q) this.openForm(q);
+			else this.renderEmptyFormState();
 		} else {
-			this.openNewForm();
+			this.renderEmptyFormState();
 		}
 	}
 
@@ -55,6 +91,44 @@ export class QuestConfigModal extends Modal {
 
 	private tr(esText: string, enText: string): string {
 		return pick(getLang(this.plugin), esText, enText);
+	}
+
+	private isExternalMarkdownSyncEnabled(): boolean {
+		return this.plugin.data.settings.markdownSyncScope !== 'daily-note';
+	}
+
+	private renderEmptyFormState(): void {
+		this.formEl.empty();
+		const wrap = this.formEl.createDiv({ cls: 'lq-quest-empty-state lq-card' });
+		wrap.createEl('h3', { text: this.tr('Selecciona o crea una quest', 'Select or create a quest') });
+		wrap.createEl('p', {
+			text: this.tr(
+				'Elige una quest de la lista para editarla o crea una nueva para empezar.',
+				'Choose a quest from the list to edit it, or create a new one to get started.'
+			)
+		});
+		const cta = wrap.createEl('button', { text: this.tr('+ Nueva quest', '+ New quest'), cls: 'lq-btn lq-btn-primary' });
+		cta.addEventListener('click', () => this.openNewForm());
+	}
+
+	private async copyQuestTag(quest: Pick<Quest, 'id'>, requireSaved = false): Promise<void> {
+		if (requireSaved) {
+			new Notice(this.tr('Guarda la quest primero para copiar un tag válido.', 'Save the quest first to copy a valid tag.'));
+			return;
+		}
+
+		const copied = await copyTextToClipboard(buildQuestTag(quest.id));
+		new Notice(copied ? this.tr('Tag copiado ✅', 'Tag copied ✅') : this.tr('No se pudo copiar el tag.', 'Could not copy the tag.'));
+	}
+
+	private async copyQuestCheckbox(quest: Pick<Quest, 'id' | 'title'>, requireSaved = false): Promise<void> {
+		if (requireSaved) {
+			new Notice(this.tr('Guarda la quest primero para copiar un checkbox válido.', 'Save the quest first to copy a valid checkbox.'));
+			return;
+		}
+
+		const copied = await copyTextToClipboard(buildQuestMarkdownCheckbox(quest.title, quest.id));
+		new Notice(copied ? this.tr('Checkbox Markdown copiado ✅', 'Markdown checkbox copied ✅') : this.tr('No se pudo copiar el checkbox.', 'Could not copy the checkbox.'));
 	}
 
 	private getDifficultyLabels(): Record<Quest['difficulty'], string> {
@@ -90,18 +164,41 @@ export class QuestConfigModal extends Modal {
 		el.empty();
 		const lang = getLang(this.plugin);
 		const frequencyLabels = this.getFrequencyLabels();
+		const externalMarkdownSyncEnabled = this.isExternalMarkdownSyncEnabled();
 
-		el.createEl('h3', { text: pick(lang, 'Quests', 'Quests'), cls: 'lq-section-title' });
+		const header = el.createDiv({ cls: 'lq-quest-list-header' });
+		const headingWrap = header.createDiv({ cls: 'lq-quest-list-heading' });
+		headingWrap.createEl('h3', { text: pick(lang, 'Quests', 'Quests'), cls: 'lq-section-title' });
+
+		const newBtn = header.createEl('button', { text: pick(lang, '+ Nueva quest', '+ New quest'), cls: 'lq-btn lq-btn-primary lq-quest-list-new-btn' });
+		newBtn.addEventListener('click', () => this.openNewForm());
 
 		const activeQuests = this.plugin.data.quests.filter(q => q.status !== 'retired');
+		const total  = activeQuests.length;
+		const maxXPDay = activeQuests
+			.filter(q => q.status === 'active' && q.frequency === 'daily')
+			.reduce((s, q) => s + q.xp, 0);
+		const riskDay  = activeQuests
+			.filter(q => q.status === 'active' && q.frequency === 'daily')
+			.reduce((s, q) => s + q.penalty, 0);
+
+		const summary = el.createDiv({ cls: 'lq-quest-list-summary' });
+		summary.createEl('span', { text: pick(lang, `${total} quests`, `${total} quests`) });
+		summary.createEl('span', { text: pick(lang, `↑ ${maxXPDay} XP/día`, `↑ ${maxXPDay} XP/day`) });
+		summary.createEl('span', { text: pick(lang, `↓ ${riskDay} riesgo/día`, `↓ ${riskDay} risk/day`) });
+
+		const body = el.createDiv({ cls: 'lq-quest-list-body' });
 
 		if (activeQuests.length === 0) {
-			const empty = el.createDiv({ cls: 'lq-empty' });
+			const empty = body.createDiv({ cls: 'lq-empty' });
 			empty.textContent = pick(lang, 'Aún no hay quests. Crea la primera →', 'No quests yet. Create your first one →');
 		}
 
-			activeQuests.forEach(quest => {
-			const row = el.createDiv({ cls: 'lq-quest-list-row' });
+		activeQuests.forEach(quest => {
+			const row = body.createDiv({ cls: 'lq-quest-list-row' });
+			if (this.editingId === quest.id) {
+				row.addClass('is-selected');
+			}
 			const area = this.plugin.data.settings.lifeAreas.find(a => a.id === quest.area);
 
 			const dot = row.createDiv({ cls: 'lq-quest-dot' });
@@ -119,6 +216,17 @@ export class QuestConfigModal extends Modal {
 			const editBtn = actions.createEl('button', { cls: 'lq-icon-btn', attr: { title: pick(lang, 'Editar', 'Edit') } });
 			editBtn.textContent = '✏';
 			editBtn.addEventListener('click', () => this.openForm(quest));
+
+			row.addEventListener('click', (event) => {
+				if ((event.target as HTMLElement).closest('button')) return;
+				this.openForm(quest);
+			});
+
+			if (externalMarkdownSyncEnabled) {
+				const copyCheckboxBtn = actions.createEl('button', { cls: 'lq-icon-btn', attr: { title: pick(lang, 'Copiar checkbox Markdown', 'Copy Markdown checkbox') } });
+				copyCheckboxBtn.textContent = '📋';
+				copyCheckboxBtn.addEventListener('click', () => { void this.copyQuestCheckbox(quest); });
+			}
 
 			// Pause / Resume
 			if (quest.status === 'active') {
@@ -166,24 +274,6 @@ export class QuestConfigModal extends Modal {
 				).open();
 			});
 		});
-
-		// Global stats footer
-		const footer = el.createDiv({ cls: 'lq-quest-list-footer' });
-		const total  = activeQuests.length;
-		const maxXPDay = activeQuests
-			.filter(q => q.status === 'active' && q.frequency === 'daily')
-			.reduce((s, q) => s + q.xp, 0);
-		const riskDay  = activeQuests
-			.filter(q => q.status === 'active' && q.frequency === 'daily')
-			.reduce((s, q) => s + q.penalty, 0);
-		footer.createEl('span', { text: pick(lang, `${total} quests`, `${total} quests`) });
-		footer.createEl('span', { text: pick(lang, `↑ ${maxXPDay} XP/día`, `↑ ${maxXPDay} XP/day`) });
-		footer.createEl('span', { text: pick(lang, `↓ ${riskDay} riesgo/día`, `↓ ${riskDay} risk/day`) });
-
-		// New quest button
-		const newBtn = el.createEl('button', { text: pick(lang, '+ Nueva quest', '+ New quest'), cls: 'lq-btn lq-btn-primary' });
-		newBtn.addClass('lq-quest-list-new-btn');
-		newBtn.addEventListener('click', () => this.openNewForm());
 	}
 
 	// ── Quest Form ────────────────────────────────────────────────────────────
@@ -323,10 +413,19 @@ export class QuestConfigModal extends Modal {
 		const previewRow = el.createDiv({ cls: 'lq-quest-preview-row lq-card' });
 		this.updatePreviewRow(previewRow);
 
+		if (this.isExternalMarkdownSyncEnabled()) {
+			const copyRow = el.createDiv({ cls: 'lq-quest-copy-row' });
+			const copyTagBtn = copyRow.createEl('button', { text: this.tr('Copiar tag', 'Copy tag'), cls: 'lq-btn lq-btn-ghost' });
+			copyTagBtn.addEventListener('click', () => { void this.copyQuestTag(d, isNew); });
+
+			const copyCheckboxBtn = copyRow.createEl('button', { text: this.tr('Copiar checkbox Markdown', 'Copy Markdown checkbox'), cls: 'lq-btn lq-btn-ghost' });
+			copyCheckboxBtn.addEventListener('click', () => { void this.copyQuestCheckbox(d, isNew); });
+		}
+
 		// Footer
 		const footer = el.createDiv({ cls: 'lq-modal-footer' });
 		const cancelBtn = footer.createEl('button', { text: this.tr('Cancelar', 'Cancel'), cls: 'lq-btn lq-btn-ghost' });
-		cancelBtn.addEventListener('click', () => { this.formEl.empty(); });
+		cancelBtn.addEventListener('click', () => { this.renderEmptyFormState(); });
 
 		const saveBtn = footer.createEl('button', { text: isNew ? this.tr('Crear quest', 'Create quest') : this.tr('Guardar quest', 'Save quest'), cls: 'lq-btn lq-btn-primary' });
 		saveBtn.addEventListener('click', () => {
@@ -357,7 +456,7 @@ export class QuestConfigModal extends Modal {
 			this.plugin.getDashboardView()?.scheduleRefresh();
 			new Notice(isNew ? this.tr('Quest creada ✅', 'Quest created ✅') : this.tr('Quest actualizada ✅', 'Quest updated ✅'));
 			this.renderList();
-			this.formEl.empty();
+			this.renderEmptyFormState();
 			})();
 		});
 	}

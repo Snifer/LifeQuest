@@ -14,9 +14,10 @@ Esta guía explica cómo LifeQuest genera el bloque de la nota diaria y cómo fu
 
 Para Kanban u otros flujos Markdown:
 
-1. Conserva el tag `#lq-...` en la línea del checkbox
+1. Copia un checkbox Markdown desde la UI de la quest, o conserva el tag `#lq-...` en la línea
 2. Define el **alcance de sincronización Markdown** en ajustes
 3. Prefiere **carpetas específicas** si no quieres revisar toda la bóveda
+4. Agrega **carpetas excluidas** para archive, templates o zonas que no deberían afectar la sync
 
 ## Qué genera el plugin
 
@@ -103,6 +104,17 @@ LifeQuest puede monitorear checkboxes de quests de tres formas:
 
 Si usás Kanban, el mejor balance normalmente es **carpetas específicas**.
 
+### Carpetas excluidas
+
+Usa carpetas excluidas cuando quieras mantener la sync Markdown activa pero necesites ignorar zonas como:
+
+- archive
+- templates
+- notas importadas
+- carpetas internas del plugin
+
+LifeQuest ya evita rutas internas como `_LifeQuest` y `.obsidian`, y encima de eso puedes sumar tus propias exclusiones.
+
 ## Formato Markdown soportado
 
 La sincronización funciona cuando la línea del checkbox conserva el tag de la quest:
@@ -159,6 +171,7 @@ Por qué existe esta limitación:
 - usa agrupación si tu nota se vuelve larga
 - usa el modo de solo pendientes si regeneras con frecuencia
 - en bóvedas grandes, prefiere carpetas específicas antes que toda la bóveda
+- agrega carpetas excluidas si tu vault tiene áreas de archive o templates
 
 ## Siguiente paso
 

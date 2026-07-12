@@ -399,7 +399,17 @@
 .lq-card:nth-child(6) { animation-delay: 0.25s; }
 
 /* ── Profile Editor Modal ───────────────────────────────────────────────────── */
-.lq-modal { padding: 24px; color: #e8eaf0; max-width: 700px; }
+.modal.lq-quest-modal-shell {
+  width: min(1040px, 94vw);
+  max-width: 1040px;
+}
+
+.lq-modal {
+  padding: 24px;
+  color: #e8eaf0;
+  width: min(1000px, 92vw);
+  max-width: 1000px;
+}
 .lq-modal h2 { margin: 0 0 20px; font-size: 20px; font-weight: 700; }
 
 .lq-modal-layout {
@@ -674,34 +684,103 @@
 /* ── Quest Config Modal ─────────────────────────────────────────────────────── */
 .lq-quest-modal-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 20px;
-  max-height: 70vh;
+  grid-template-columns: minmax(320px, 420px) minmax(420px, 1fr);
+  gap: 24px;
+  max-height: 80vh;
+  min-height: 560px;
+  overflow: hidden;
 }
 .lq-quest-list-panel {
   overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid rgba(255,255,255,0.07);
-  padding-right: 14px;
+  padding-right: 18px;
 }
-.lq-quest-form-panel { overflow-y: auto; padding-right: 4px; }
+.lq-quest-form-panel {
+  overflow-y: hidden;
+  overflow-x: hidden;
+  padding-right: 12px;
+  min-width: 0;
+}
+
+.lq-quest-list-header,
+.lq-quest-list-summary {
+  position: sticky;
+  z-index: 2;
+  background: #1f2123;
+}
+
+.lq-quest-list-header {
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.lq-quest-list-heading .lq-section-title {
+  margin-bottom: 0;
+}
+
+.lq-quest-list-summary {
+  top: 56px;
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  color: #6b7280;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.lq-quest-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 .lq-quest-list-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 6px;
-  border-radius: 8px;
-  margin-bottom: 4px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  margin-bottom: 6px;
   transition: background 0.15s;
 }
 .lq-quest-list-row:hover { background: #22263a; }
-.lq-quest-list-info { flex: 1; min-width: 0; }
-.lq-quest-list-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lq-quest-list-sub { font-size: 10px; color: #6b7280; }
-.lq-quest-list-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.lq-quest-list-row.is-selected {
+  background: rgba(127,119,221,0.14);
+  border: 1px solid rgba(127,119,221,0.45);
+  box-shadow: inset 0 0 0 1px rgba(127,119,221,0.18);
+}
+.lq-quest-list-row.is-selected:hover {
+  background: rgba(127,119,221,0.18);
+}
+.lq-quest-list-info { flex: 1; min-width: 0; padding-top: 2px; }
+.lq-quest-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lq-quest-list-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.lq-quest-list-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 28px);
+  gap: 6px;
+  flex-shrink: 0;
+  align-self: center;
+}
 
 .lq-icon-btn {
-  width: 26px; height: 26px;
+  width: 28px; height: 28px;
   border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.07);
   background: transparent;
@@ -714,17 +793,6 @@
 .lq-icon-btn:hover { background: #22263a; color: #e8eaf0; border-color: rgba(255,255,255,0.15); }
 .lq-icon-btn.danger:hover { color: #f87171; border-color: #f87171; }
 
-.lq-quest-list-footer {
-  display: flex;
-  gap: 10px;
-  font-size: 10px;
-  color: #6b7280;
-  padding: 8px 0;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
 .lq-slider {
   width: 100%;
   margin-bottom: 12px;
@@ -732,6 +800,78 @@
 }
 
 .lq-quest-preview-row { border: 1px dashed rgba(127,119,221,0.4); }
+
+.lq-quest-copy-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.lq-quest-copy-row .lq-btn {
+  width: 100%;
+}
+
+.lq-quest-empty-state {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.lq-quest-empty-state h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.lq-quest-empty-state p {
+  margin: 0;
+  color: #9ca3af;
+  line-height: 1.5;
+  max-width: 38ch;
+}
+
+.lq-quest-empty-state .lq-btn {
+  align-self: flex-start;
+}
+
+@media (max-width: 900px) {
+  .modal.lq-quest-modal-shell {
+    width: min(96vw, 760px);
+    max-width: 760px;
+  }
+
+  .lq-modal {
+    width: 100%;
+    max-width: none;
+    padding: 20px;
+  }
+
+  .lq-quest-modal-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    max-height: none;
+    min-height: 0;
+  }
+
+  .lq-quest-list-panel {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding-right: 0;
+    padding-bottom: 16px;
+    max-height: 42vh;
+  }
+
+  .lq-quest-list-summary {
+    top: 56px;
+  }
+
+  .lq-quest-form-panel {
+    padding-right: 0;
+    overflow-y: visible;
+  }
+}
 
 /* ── Weekly Review View ─────────────────────────────────────────────────────── */
 .lq-week-nav {

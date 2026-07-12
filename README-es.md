@@ -39,7 +39,9 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 ### Sincronización Markdown de quests
 - Cualquier checkbox Markdown que conserve un tag de LifeQuest como `#lq-d23a-...` puede sincronizar completados.
 - Esto funciona con daily notes, tarjetas de Kanban y otros flujos basados en Markdown.
+- Puedes copiar el tag o un checkbox Markdown completo directamente desde la UI de la quest.
 - En bóvedas grandes, lo recomendado es usar **carpetas específicas** en lugar de **toda la bóveda**.
+- También puedes definir **carpetas excluidas** para ignorar archivos de archive, templates o datos internos del plugin.
 - Limitación: las penalizaciones del día anterior **todavía no** se derivan de archivos Markdown genéricos; siguen dependiendo de la daily note.
 
 ### Widgets

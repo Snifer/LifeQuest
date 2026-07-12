@@ -42,6 +42,15 @@ Each quest can include:
 - optional note
 - status
 
+## Copying a quest to Markdown or Kanban
+
+LifeQuest now lets you copy quest references directly from the quest UI:
+
+- **Copy tag** → `#lq-<id>`
+- **Copy Markdown checkbox** → `- [ ] Quest title #lq-<id>`
+
+Use the full Markdown checkbox when you want the fastest path into Kanban or any regular note.
+
 ## Difficulty
 
 Difficulty affects how the quest feels in your system and may also affect related reward logic.

@@ -23,6 +23,7 @@ Use this page when something behaves differently from what you expect.
 - regenerate the block if it became inconsistent
 - if the quest is outside the daily note, check **Markdown sync scope**
 - if you use selected folders, confirm the file is inside one of those folders
+- check whether the file is inside an **excluded folder**
 - whole-vault mode can be heavier, so selected folders are usually the safer setup
 
 ## Penalties did not apply from Kanban or another note

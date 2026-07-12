@@ -42,6 +42,15 @@ Cada quest puede incluir:
 - nota opcional
 - estado
 
+## Copiar una quest a Markdown o Kanban
+
+LifeQuest ahora te deja copiar referencias de quest directamente desde la UI:
+
+- **Copiar tag** → `#lq-<id>`
+- **Copiar checkbox Markdown** → `- [ ] Título de la quest #lq-<id>`
+
+Usa el checkbox Markdown completo cuando quieras el camino más rápido hacia Kanban o cualquier nota normal.
+
 ## Dificultad
 
 La dificultad afecta cómo se siente la quest dentro del sistema y puede influir en lógica de recompensas relacionada.

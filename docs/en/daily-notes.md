@@ -14,9 +14,10 @@ This guide explains how LifeQuest generates your daily note block and how Markdo
 
 For Kanban or other Markdown workflows:
 
-1. Keep the `#lq-...` tag on the checkbox line
+1. Copy a Markdown checkbox from the quest UI, or keep the `#lq-...` tag on the checkbox line
 2. Set **Markdown sync scope** in settings
 3. Prefer **Selected folders** if you do not want to scan the whole vault
+4. Add **Excluded folders** for archive, templates, or areas that should never affect sync
 
 ## What the plugin generates
 
@@ -103,6 +104,17 @@ LifeQuest can monitor quest checkboxes in three ways:
 
 If you use Kanban, the best balance is usually **Selected folders**.
 
+### Excluded folders
+
+Use excluded folders when you want Markdown sync enabled but need to ignore areas such as:
+
+- archive
+- templates
+- imported notes
+- internal plugin folders
+
+LifeQuest already avoids internal paths like `_LifeQuest` and `.obsidian`, and you can add your own exclusions on top.
+
 ## Supported Markdown format
 
 LifeQuest sync works when the checkbox line keeps the quest tag:
@@ -159,6 +171,7 @@ Why this limitation exists:
 - Use grouping if your note gets too long
 - Use pending-only mode if you regenerate often
 - Prefer selected folders over whole-vault sync in large vaults
+- Add excluded folders if your vault contains archive or template areas
 
 ## Next step
 

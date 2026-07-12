@@ -39,7 +39,9 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 ### Markdown quest sync
 - Any Markdown checkbox line that keeps a LifeQuest tag like `#lq-d23a-...` can sync quest completion.
 - This works with daily notes, Kanban cards, and other Markdown-based task workflows.
+- You can copy the tag or a full Markdown checkbox directly from the quest UI.
 - Recommended setup for large vaults: use **selected folders** instead of **whole vault**.
+- You can also define **excluded folders** to ignore archives, templates, or internal plugin data.
 - Limitation: previous-day penalties are **not** derived from generic Markdown files yet. They still depend on the daily note.
 
 ### Widgets
