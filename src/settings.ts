@@ -513,6 +513,20 @@ export class LifequestSettingTab extends PluginSettingTab {
 					this.plugin.data.settings.xpPerLevel = num;
 					await this.plugin.store.save(this.plugin.data);
 				}));
+
+		this.renderSubheading(panel, this.tr('Subquests', 'Subquests'));
+		new Setting(panel)
+			.setName(this.tr('Autocompletar quest padre', 'Auto-complete parent quest'))
+			.setDesc(this.tr(
+				'Cuando todas las subquests activas se completan hoy, completa automáticamente la quest padre y aplica su recompensa.',
+				'When all active subquests are completed today, automatically complete the parent quest and apply its reward.'
+			))
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.data.settings.autoCompleteParentQuests)
+				.onChange(async (val) => {
+					this.plugin.data.settings.autoCompleteParentQuests = val;
+					await this.plugin.store.save(this.plugin.data);
+				}));
 	}
 
 	private renderEconomyPanel(panel: HTMLElement): void {

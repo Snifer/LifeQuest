@@ -118,6 +118,9 @@ export function sanitizeData(data: LifequestData): LifequestData {
 	data.settings.rewardSettings.weighIn.base = clampInt(data.settings.rewardSettings.weighIn.base, 0, 200, DEFAULT_DATA.settings.rewardSettings.weighIn.base);
 	data.settings.rewardSettings.weighIn.streak4 = clampInt(data.settings.rewardSettings.weighIn.streak4, 0, 300, DEFAULT_DATA.settings.rewardSettings.weighIn.streak4);
 	data.settings.rewardSettings.weighIn.streak12 = clampInt(data.settings.rewardSettings.weighIn.streak12, 0, 500, DEFAULT_DATA.settings.rewardSettings.weighIn.streak12);
+	if (typeof data.settings.autoCompleteParentQuests !== 'boolean') {
+		data.settings.autoCompleteParentQuests = DEFAULT_DATA.settings.autoCompleteParentQuests;
+	}
 	normalizeQuestHierarchy(data);
 	return data;
 }
@@ -211,6 +214,9 @@ class LifequestStore {
 			}
 			if (typeof data.settings.shopEnabled !== 'boolean') {
 				data.settings.shopEnabled = DEFAULT_DATA.settings.shopEnabled;
+			}
+			if (typeof data.settings.autoCompleteParentQuests !== 'boolean') {
+				data.settings.autoCompleteParentQuests = DEFAULT_DATA.settings.autoCompleteParentQuests;
 			}
 				const legacySettings = data.settings as LegacySettings;
 			if (!data.settings.rewardSettings) {

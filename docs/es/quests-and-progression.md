@@ -42,14 +42,32 @@ Cada quest puede incluir:
 - nota opcional
 - estado
 
+## Subquests
+
+LifeQuest ahora soporta **un nivel de subquests**.
+
+Comportamiento actual:
+
+- una quest root puede contener subquests
+- cada subquest tiene su propia XP, penalización, recordatorio y dificultad
+- las subquests se pueden colapsar o expandir bajo su quest padre
+- las subquests se pueden reordenar entre siblings desde el modal de quests
+- la quest padre puede seguir siendo manual o autocompletarse cuando todas las subquests activas están hechas, según ajustes
+- las vistas jerárquicas pueden cambiar a modo solo roots y expandir o colapsar todas las roots de una vez
+
+Limitación importante:
+
+- en esta primera iteración solo se soporta un nivel de anidación
+
 ## Copiar una quest a Markdown o Kanban
 
 LifeQuest ahora te deja copiar referencias de quest directamente desde la UI:
 
 - **Copiar tag** → `#lq-<id>`
 - **Copiar checkbox Markdown** → `- [ ] Título de la quest #lq-<id>`
+- **Command Palette** → `LifeQuest: Copy quest as Markdown`
 
-Usa el checkbox Markdown completo cuando quieras el camino más rápido hacia Kanban o cualquier nota normal.
+Usa el checkbox Markdown completo cuando quieras el camino más rápido hacia Kanban o cualquier nota normal. El flujo por Command Palette sirve cuando quieres encontrar una quest rápido sin abrir el modal de configuración.
 
 ## Dificultad
 

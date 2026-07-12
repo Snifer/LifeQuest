@@ -1,8 +1,28 @@
 # Changelog
 
+
+## 1.0.7
+
+Feature release focused on the subquests implementation and the hierarchy UX improvements built on top of it.
+
+### Added
+
+- Subquest hierarchy foundations with one-level parent/child quest relations, collapse state, and stable ordering metadata.
+- Shared quest hierarchy helpers plus subquest creation, hierarchical modal rendering, dashboard rendering, and sibling reordering flows.
+- Command palette action to search any configured quest and copy its ready-to-paste Markdown checkbox with LifeQuest ID.
+- Parent progress badges for root quests so hierarchy progress is visible at a glance.
+- Visual hierarchy controls to show all quests or only roots, plus expand-all and collapse-all actions.
+
+### Changed
+
+- Updated plugin version metadata for the `1.0.7` release.
+- Expanded the README and bilingual docs to explain subquest behavior, command-based Markdown copy, and hierarchy workflow details.
+- Added optional parent auto-complete when all active subquests are completed on the same day.
+
+
 ## 1.0.6
 
-Feature release focused on Markdown quest sync usability, scope controls, and documentation clarity.
+Feature release focused on Markdown quest sync usability and documentation clarity.
 
 ### Added
 

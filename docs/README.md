@@ -42,3 +42,7 @@ This folder contains the full user documentation for LifeQuest in English and Sp
 - The documentation describes the current plugin behavior.
 - Optional add-ons remain optional.
 - The plugin stores its data inside your vault by default.
+
+## Maintainer notes
+
+- [Subquests implementation phases](subquests.md)

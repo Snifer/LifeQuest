@@ -241,6 +241,7 @@ export interface PluginSettings {
 	showCoinsInDashboard: boolean;
 	rewardSettings: RewardSettings;
 	xpPerLevel: number;
+	autoCompleteParentQuests: boolean;
 	healthEnabled: boolean;
 	healthModules: {
 		weight: boolean;
@@ -436,6 +437,7 @@ export const DEFAULT_DATA: LifequestData = {
 			weighIn: { base: 10, streak4: 20, streak12: 30 },
 		},
 		xpPerLevel: 500,
+		autoCompleteParentQuests: false,
 		healthEnabled: false,
 		healthModules: {
 			weight: true,

@@ -12,7 +12,7 @@ This guide helps you go from installation to your first useful LifeQuest workflo
 4. Create your first quest
 5. Generate your daily note block
 6. Optional: enable Markdown sync for selected folders if you use Kanban
-7. Optional: copy the Markdown checkbox from the quest UI into your Kanban note
+7. Optional: copy the Markdown checkbox from the quest UI or from **LifeQuest: Copy quest as Markdown** into your Kanban note
 
 ## What LifeQuest is
 
@@ -82,7 +82,7 @@ Use the weekly review to reflect on:
 
 1. Open the dashboard
 2. Create 3 to 5 simple daily quests
-3. If you use Kanban, copy a quest checkbox from the quest UI into your board
+3. If you use Kanban, copy a quest checkbox from the quest UI or by using **LifeQuest: Copy quest as Markdown**
 4. Generate today’s quests into your daily note
 5. Review the dashboard in the evening
 6. Complete the weekly review at the end of the week

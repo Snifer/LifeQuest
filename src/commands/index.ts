@@ -3,6 +3,7 @@ import type LifequestPlugin from '../main';
 import { generateDailyNote } from '../daily-note';
 import { ProfileEditorModal } from '../ui/profile-editor';
 import { QuestConfigModal } from '../ui/quest-config';
+import { QuestCopyMarkdownModal } from '../ui/quest-copy-markdown-modal';
 import { SHOP_VIEW_TYPE } from '../ui/shop';
 import { HEALTH_VIEW_TYPE } from '../ui/health-tracker';
 import { HealthSetupModal } from '../ui/health-setup';
@@ -28,6 +29,18 @@ export function registerCommands(plugin: LifequestPlugin) {
 		id: 'new-quest',
 		name: pick(lang, 'LifeQuest: Nueva quest', 'LifeQuest: New quest'),
 		callback: () => new QuestConfigModal(plugin).open()
+	});
+
+	plugin.addCommand({
+		id: 'copy-quest-markdown',
+		name: pick(lang, 'LifeQuest: Copiar quest en Markdown', 'LifeQuest: Copy quest as Markdown'),
+		callback: () => {
+			if (plugin.data.quests.length === 0) {
+				new Notice(pick(lang, 'No hay quests configuradas todavía.', 'There are no configured quests yet.'));
+				return;
+			}
+			new QuestCopyMarkdownModal(plugin).open();
+		}
 	});
 
 	plugin.addCommand({

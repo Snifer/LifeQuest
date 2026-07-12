@@ -42,14 +42,32 @@ Each quest can include:
 - optional note
 - status
 
+## Subquests
+
+LifeQuest now supports **one level of subquests**.
+
+Current behavior:
+
+- a root quest can contain subquests
+- each subquest has its own XP, penalty, reminder, and difficulty
+- subquests can be collapsed or expanded under their parent
+- subquests can be reordered among siblings in the quest configuration modal
+- the parent quest can stay manual or auto-complete when all active subquests are done, depending on settings
+- hierarchy views can switch to roots-only mode and expand or collapse all roots at once
+
+Important limitation:
+
+- only one nesting level is supported in this first iteration
+
 ## Copying a quest to Markdown or Kanban
 
 LifeQuest now lets you copy quest references directly from the quest UI:
 
 - **Copy tag** → `#lq-<id>`
 - **Copy Markdown checkbox** → `- [ ] Quest title #lq-<id>`
+- **Command Palette** → `LifeQuest: Copy quest as Markdown`
 
-Use the full Markdown checkbox when you want the fastest path into Kanban or any regular note.
+Use the full Markdown checkbox when you want the fastest path into Kanban or any regular note. The command palette flow is useful when you want to find a quest quickly without opening the quest configuration modal.
 
 ## Difficulty
 

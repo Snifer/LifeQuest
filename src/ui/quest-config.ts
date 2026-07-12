@@ -1,9 +1,18 @@
 import { Modal, Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
-import { Quest } from '../types';
+import { LogEntry, Quest } from '../types';
 import { getLang, pick } from '../i18n';
 import { ConfirmModal } from './confirm-modal';
 import { moment } from '../obsidian-moment';
+import {
+	createSubquestDraft,
+	flattenVisibleQuests,
+	getSubquestProgress,
+	reorderQuest,
+	setAllRootCollapsed,
+	type QuestListFilter,
+} from '../core/quest-hierarchy';
+import { buildQuestMarkdownCheckbox, buildQuestTag, copyTextToClipboard } from '../core/quest-markdown';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -12,26 +21,6 @@ function uuid(): string {
 		const r = Math.random() * 16 | 0;
 		return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
 	});
-}
-
-function buildQuestTag(questId: string): string {
-	return `#lq-${questId}`;
-}
-
-function buildQuestMarkdownCheckbox(questTitle: string, questId: string): string {
-	return `- [ ] ${questTitle.trim()} ${buildQuestTag(questId)}`.trim();
-}
-
-async function copyTextToClipboard(value: string): Promise<boolean> {
-	try {
-		if (navigator.clipboard?.writeText) {
-			await navigator.clipboard.writeText(value);
-			return true;
-		}
-	} catch {
-		return false;
-	}
-	return false;
 }
 
 type QuestDraft = Omit<Quest, 'createdAt' | 'lastModifiedAt'> & { createdAt?: string; lastModifiedAt?: string };
@@ -44,6 +33,7 @@ export class QuestConfigModal extends Modal {
 	private draft: QuestDraft | null = null;
 	private listEl!: HTMLElement;
 	private formEl!: HTMLElement;
+	private listFilter: QuestListFilter = 'all';
 
 	constructor(plugin: LifequestPlugin, editQuestId?: string) {
 		super(plugin.app);
@@ -56,6 +46,7 @@ export class QuestConfigModal extends Modal {
 		const lang = getLang(this.plugin);
 		this.modalEl.addClass('lq-quest-modal-shell');
 		contentEl.addClass('lq-modal');
+		contentEl.addClass('lq-quest-modal-content');
 		contentEl.createEl('h2', { text: pick(lang, 'Configuración de quests', 'Quest configuration') });
 
 		const layout = contentEl.createDiv({ cls: 'lq-quest-modal-layout' });
@@ -144,6 +135,61 @@ export class QuestConfigModal extends Modal {
 		};
 	}
 
+	private getQuestById(questId: string | null | undefined): Quest | undefined {
+		return questId ? this.plugin.data.quests.find((quest) => quest.id === questId) : undefined;
+	}
+
+	private getSelectedRootQuest(): Quest | undefined {
+		const selectedQuest = this.getQuestById(this.editingId);
+		if (!selectedQuest) {
+			return undefined;
+		}
+		return selectedQuest.parentQuestId ? this.getQuestById(selectedQuest.parentQuestId) : selectedQuest;
+	}
+
+	private async toggleCollapse(quest: Quest): Promise<void> {
+		quest.isCollapsed = !quest.isCollapsed;
+		quest.lastModifiedAt = moment().format('YYYY-MM-DD');
+		await this.plugin.store.save(this.plugin.data);
+		this.renderList();
+	}
+
+	private async moveQuest(quest: Quest, direction: 'up' | 'down'): Promise<void> {
+		const moved = reorderQuest(this.plugin.data.quests, quest.id, direction);
+		if (!moved) {
+			return;
+		}
+
+		quest.lastModifiedAt = moment().format('YYYY-MM-DD');
+		await this.plugin.store.save(this.plugin.data);
+		this.renderList();
+	}
+
+	private async setQuestListCollapsed(collapsed: boolean): Promise<void> {
+		const changed = setAllRootCollapsed(this.plugin.data.quests, collapsed);
+		if (!changed) {
+			return;
+		}
+		await this.plugin.store.save(this.plugin.data);
+		this.renderList();
+	}
+
+	private countQuestDoneToday(logs: LogEntry[], questId: string): boolean {
+		const today = moment().format('YYYY-MM-DD');
+		return logs.some((log) => log.questId === questId && log.type === 'quest_completed' && log.timestamp.startsWith(today));
+	}
+
+	private openSubquestForm(parent: Quest): void {
+		const today = moment().format('YYYY-MM-DD');
+		this.editingId = null;
+		this.draft = createSubquestDraft(parent, this.plugin.data.quests, {
+			id: uuid(),
+			today,
+			area: parent.area,
+		});
+		this.renderForm();
+	}
+
 	// ── Quest List Panel ──────────────────────────────────────────────────────
 	private renderList(): void {
 		const el = this.listEl;
@@ -173,30 +219,92 @@ export class QuestConfigModal extends Modal {
 		summary.createEl('span', { text: pick(lang, `↑ ${maxXPDay} XP/día`, `↑ ${maxXPDay} XP/day`) });
 		summary.createEl('span', { text: pick(lang, `↓ ${riskDay} riesgo/día`, `↓ ${riskDay} risk/day`) });
 
-		const body = el.createDiv({ cls: 'lq-quest-list-body' });
+		const toolbar = el.createDiv({ cls: 'lq-quest-list-toolbar' });
+		const filterAllBtn = toolbar.createEl('button', { text: pick(lang, 'Todo', 'All'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+		const filterRootsBtn = toolbar.createEl('button', { text: pick(lang, 'Solo roots', 'Roots only'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+		const collapseAllBtn = toolbar.createEl('button', { text: pick(lang, 'Colapsar todo', 'Collapse all'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+		const expandAllBtn = toolbar.createEl('button', { text: pick(lang, 'Expandir todo', 'Expand all'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+		if (this.listFilter === 'all') filterAllBtn.addClass('is-active');
+		if (this.listFilter === 'roots') filterRootsBtn.addClass('is-active');
+		filterAllBtn.addEventListener('click', () => {
+			this.listFilter = 'all';
+			this.renderList();
+		});
+		filterRootsBtn.addEventListener('click', () => {
+			this.listFilter = 'roots';
+			this.renderList();
+		});
+		collapseAllBtn.addEventListener('click', () => { void this.setQuestListCollapsed(true); });
+		expandAllBtn.addEventListener('click', () => { void this.setQuestListCollapsed(false); });
 
-		if (activeQuests.length === 0) {
+		const body = el.createDiv({ cls: 'lq-quest-list-body' });
+		const visibleRows = flattenVisibleQuests(activeQuests, true).filter((row) => this.listFilter === 'all' || row.depth === 0);
+		const selectedRootQuest = this.getSelectedRootQuest();
+		const today = moment().format('YYYY-MM-DD');
+
+		if (visibleRows.length === 0) {
 			const empty = body.createDiv({ cls: 'lq-empty' });
 			empty.textContent = pick(lang, 'Aún no hay quests. Crea la primera →', 'No quests yet. Create your first one →');
 		}
 
-		activeQuests.forEach(quest => {
+		visibleRows.forEach(({ quest, depth, hasChildren, isCollapsed }) => {
 			const row = body.createDiv({ cls: 'lq-quest-list-row' });
+			if (depth === 1) {
+				row.addClass('is-subquest');
+			}
 			if (this.editingId === quest.id) {
 				row.addClass('is-selected');
 			}
 			const area = this.plugin.data.settings.lifeAreas.find(a => a.id === quest.area);
 
+			const lead = row.createDiv({ cls: 'lq-quest-list-lead' });
+			if (depth === 1) {
+				lead.createDiv({ cls: 'lq-quest-indent' });
+			}
+			if (depth === 0 && hasChildren) {
+				const caret = lead.createEl('button', {
+					cls: 'lq-quest-caret',
+					attr: { title: isCollapsed ? pick(lang, 'Expandir subquests', 'Expand subquests') : pick(lang, 'Colapsar subquests', 'Collapse subquests') }
+				});
+				caret.textContent = isCollapsed ? '▸' : '▾';
+				caret.addEventListener('click', (event) => {
+					event.stopPropagation();
+					void this.toggleCollapse(quest);
+				});
+			} else {
+				lead.createDiv({ cls: 'lq-quest-caret-placeholder' });
+			}
+
 			const dot = row.createDiv({ cls: 'lq-quest-dot' });
 			dot.setCssProps({ background: area?.color ?? '#7F77DD' });
 
 			const info = row.createDiv({ cls: 'lq-quest-list-info' });
-			const title = info.createDiv({ cls: 'lq-quest-list-title' });
+			const titleRow = info.createDiv({ cls: 'lq-quest-list-title-row' });
+			const title = titleRow.createDiv({ cls: 'lq-quest-list-title' });
 			title.textContent = quest.title;
+			if (!quest.parentQuestId && hasChildren) {
+				const progress = getSubquestProgress(quest.id, this.plugin.data.quests, this.plugin.data.activityLog, today);
+				const progressBadge = titleRow.createDiv({ cls: 'lq-subquest-progress-badge' });
+				progressBadge.textContent = `${progress.completed}/${progress.total}`;
+				if (progress.total > 0 && progress.completed === progress.total) {
+					progressBadge.addClass('is-complete');
+				}
+			}
 			const sub = info.createDiv({ cls: 'lq-quest-list-sub' });
-			sub.textContent = `${frequencyLabels[quest.frequency]} · ${quest.xp} XP`;
+			const parent = this.getQuestById(quest.parentQuestId);
+			sub.textContent = depth === 1 && parent
+				? `${pick(lang, 'Subquest de', 'Subquest of')} ${parent.title} · ${frequencyLabels[quest.frequency]} · ${quest.xp} XP`
+				: `${frequencyLabels[quest.frequency]} · ${quest.xp} XP${this.countQuestDoneToday(this.plugin.data.activityLog, quest.id) ? ` · ${pick(lang, 'Hecha hoy', 'Done today')}` : ''}`;
 
 			const actions = row.createDiv({ cls: 'lq-quest-list-actions' });
+
+			const moveUpBtn = actions.createEl('button', { cls: 'lq-icon-btn', attr: { title: pick(lang, 'Mover arriba', 'Move up') } });
+			moveUpBtn.textContent = '↑';
+			moveUpBtn.addEventListener('click', () => { void this.moveQuest(quest, 'up'); });
+
+			const moveDownBtn = actions.createEl('button', { cls: 'lq-icon-btn', attr: { title: pick(lang, 'Mover abajo', 'Move down') } });
+			moveDownBtn.textContent = '↓';
+			moveDownBtn.addEventListener('click', () => { void this.moveQuest(quest, 'down'); });
 
 			// Edit
 			const editBtn = actions.createEl('button', { cls: 'lq-icon-btn', attr: { title: pick(lang, 'Editar', 'Edit') } });
@@ -259,6 +367,17 @@ export class QuestConfigModal extends Modal {
 					pick(lang, 'Cancelar', 'Cancel')
 				).open();
 			});
+
+			if (selectedRootQuest?.id === quest.id && !quest.parentQuestId && quest.status === 'active') {
+				const addSubquestRow = body.createDiv({ cls: 'lq-quest-inline-action-row' });
+				const spacer = addSubquestRow.createDiv({ cls: 'lq-quest-inline-action-spacer' });
+				spacer.setAttr('aria-hidden', 'true');
+				const addSubquestBtn = addSubquestRow.createEl('button', {
+					text: pick(lang, '+ Agregar subquest', '+ Add subquest'),
+					cls: 'lq-btn lq-btn-ghost lq-quest-inline-action-btn',
+				});
+				addSubquestBtn.addEventListener('click', () => this.openSubquestForm(quest));
+			}
 		});
 	}
 
@@ -302,8 +421,15 @@ export class QuestConfigModal extends Modal {
 		const frequencyLabels = this.getFrequencyLabels();
 		const difficultyLabels = this.getDifficultyLabels();
 		const reminderLabels = this.getReminderLabels();
+		const parentQuest = this.getQuestById(d.parentQuestId);
 
 		el.createEl('h3', { text: isNew ? this.tr('Nueva quest', 'New quest') : this.tr('Editar quest', 'Edit quest'), cls: 'lq-section-title' });
+
+		if (parentQuest) {
+			const parentCard = el.createDiv({ cls: 'lq-subquest-parent-card lq-card' });
+			parentCard.createEl('span', { cls: 'lq-subquest-parent-label', text: this.tr('Quest padre', 'Parent quest') });
+			parentCard.createEl('strong', { text: parentQuest.title });
+		}
 
 		// Title
 		el.createEl('label', { text: this.tr('Título *', 'Title *'), cls: 'lq-label' });
@@ -423,9 +549,14 @@ export class QuestConfigModal extends Modal {
 			if (d.xp < 5 || d.xp > 100) { new Notice(this.tr('Los puntos de recompensa deben estar entre 5 y 100', 'Reward points must be between 5 and 100')); return; }
 
 			const now = moment().format('YYYY-MM-DD');
+			const safeParent = d.parentQuestId ? this.getQuestById(d.parentQuestId) : undefined;
+			const parentQuestId = safeParent && !safeParent.parentQuestId && safeParent.status !== 'retired'
+				? safeParent.id
+				: null;
 			if (isNew) {
 				const newQuest: Quest = {
 					...d,
+					parentQuestId,
 					createdAt: now,
 					lastModifiedAt: now
 				};
@@ -435,6 +566,7 @@ export class QuestConfigModal extends Modal {
 				if (idx !== -1) {
 					this.plugin.data.quests[idx] = {
 						...d,
+						parentQuestId,
 						createdAt: d.createdAt ?? now,
 						lastModifiedAt: now,
 					};

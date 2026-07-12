@@ -20,6 +20,8 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 - Hero profile with name, motto, avatar, accent color, and class.
 - Custom life areas with color coding.
 - Quest system with `daily`, `weekly`, `monthly`, and `free` frequencies.
+- One-level subquests with independent XP, penalties, reminders, and difficulty.
+- Optional parent auto-complete when all active subquests are completed on the same day.
 - Difficulty, XP reward, penalty, reminders, and per-quest notes.
 - XP progression with configurable XP-per-level.
 - Streak tracking with multipliers and activity log.
@@ -40,6 +42,7 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 - Any Markdown checkbox line that keeps a LifeQuest tag like `#lq-d23a-...` can sync quest completion.
 - This works with daily notes, Kanban cards, and other Markdown-based task workflows.
 - You can copy the tag or a full Markdown checkbox directly from the quest UI.
+- You can also use the command **LifeQuest: Copy quest as Markdown** to search any configured quest and copy its ready-to-paste checkbox with ID.
 - Recommended setup for large vaults: use **selected folders** instead of **whole vault**.
 - You can also define **excluded folders** to ignore archives, templates, or internal plugin data.
 - Limitation: previous-day penalties are **not** derived from generic Markdown files yet. They still depend on the daily note.
@@ -106,6 +109,7 @@ Dependencies and behavior:
 The plugin currently registers these commands:
 - `LifeQuest: Open dashboard`
 - `LifeQuest: New quest`
+- `LifeQuest: Copy quest as Markdown`
 - `LifeQuest: Weekly review`
 - `LifeQuest: Generate today's quests in daily note`
 - `LifeQuest: Edit profile`
@@ -162,6 +166,9 @@ Commands:
 - Tests currently cover the engine and daily message parsing/selection logic.
 - The `weekly-chart` widget supports `period: week`, `period: month`, and `period: all`.
 - Markdown quest sync supports scoped monitoring through settings: daily note, selected folders, or whole vault.
+- Subquests currently support one nesting level, collapse/expand, and sibling reordering from the quest configuration modal.
+- Parent quests remain independent by default in v1, but you can now enable optional parent auto-complete in progression settings.
+- Quest lists now support root-only filtering plus expand/collapse-all controls in hierarchy views.
 
 ## License
 

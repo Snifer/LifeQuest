@@ -1,6 +1,7 @@
 import { TFile, Notice, requestUrl } from 'obsidian';
 import type LifequestPlugin from './main';
 import { Quest, LifequestData, LogEntry } from './types';
+import { getParentAutoCompleteCandidate } from './core/quest-hierarchy';
 import { moment } from './obsidian-moment';
 import {
 	calculateXP,
@@ -507,6 +508,31 @@ function applyQuestOutcome(
 	return true;
 }
 
+function applyAutoCompleteParentOutcome(
+	data: LifequestData,
+	quest: Quest,
+	lang: PluginLanguage
+): boolean {
+	if (!data.settings.autoCompleteParentQuests) {
+		return false;
+	}
+
+	const today = moment().format('YYYY-MM-DD');
+	const parent = getParentAutoCompleteCandidate(quest, data.quests, data.activityLog, today);
+	if (!parent) {
+		return false;
+	}
+
+	return applyQuestOutcome(
+		data,
+		parent,
+		parent.id,
+		true,
+		lang,
+		`${pick(lang, '✅', '✅')} ${parent.title} (${pick(lang, 'Auto padre', 'Auto parent')})`
+	);
+}
+
 async function processQuestDiff(
 	plugin: LifequestPlugin,
 	file: TFile,
@@ -537,7 +563,11 @@ async function processQuestDiff(
 		const quest = data.quests.find(q => q.id === questId);
 		if (!quest) continue;
 
-		dirty = applyQuestOutcome(data, quest, questId, isDone, lang, `${isDone ? '✅' : '❌'} ${quest.title}`) || dirty;
+		const applied = applyQuestOutcome(data, quest, questId, isDone, lang, `${isDone ? '✅' : '❌'} ${quest.title}`);
+		dirty = applied || dirty;
+		if (applied && isDone) {
+			dirty = applyAutoCompleteParentOutcome(data, quest, lang) || dirty;
+		}
 	}
 
 	// Update in-memory state
@@ -671,6 +701,7 @@ export async function syncTrackedQuestFiles(plugin: LifequestPlugin) {
 				if (applied) {
 					awardedCount++;
 					dirty = true;
+					dirty = applyAutoCompleteParentOutcome(data, quest, data.settings.language ?? 'es') || dirty;
 				}
 			}
 		}

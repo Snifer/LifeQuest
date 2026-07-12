@@ -20,6 +20,8 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 - Perfil de héroe con nombre, lema, avatar, color de acento y clase.
 - Áreas de vida personalizadas con colores.
 - Sistema de quests con frecuencias `daily`, `weekly`, `monthly` y `free`.
+- Subquests de un nivel con XP, penalización, recordatorios y dificultad independientes.
+- Autocompletado opcional de la quest padre cuando todas las subquests activas se completan el mismo día.
 - Dificultad, recompensa de XP, penalización, recordatorios y notas por quest.
 - Progresión de XP con XP por nivel configurable.
 - Seguimiento de rachas con multiplicadores y registro de actividad.
@@ -40,6 +42,7 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 - Cualquier checkbox Markdown que conserve un tag de LifeQuest como `#lq-d23a-...` puede sincronizar completados.
 - Esto funciona con daily notes, tarjetas de Kanban y otros flujos basados en Markdown.
 - Puedes copiar el tag o un checkbox Markdown completo directamente desde la UI de la quest.
+- También puedes usar el comando **LifeQuest: Copiar quest en Markdown** para buscar cualquier quest configurada y copiar su checkbox listo para pegar con ID.
 - En bóvedas grandes, lo recomendado es usar **carpetas específicas** en lugar de **toda la bóveda**.
 - También puedes definir **carpetas excluidas** para ignorar archivos de archive, templates o datos internos del plugin.
 - Limitación: las penalizaciones del día anterior **todavía no** se derivan de archivos Markdown genéricos; siguen dependiendo de la daily note.
@@ -106,6 +109,7 @@ Dependencias y comportamiento:
 El plugin registra actualmente estos comandos:
 - `LifeQuest: Open dashboard`
 - `LifeQuest: New quest`
+- `LifeQuest: Copy quest as Markdown`
 - `LifeQuest: Weekly review`
 - `LifeQuest: Generate today's quests in daily note`
 - `LifeQuest: Edit profile`
@@ -162,6 +166,9 @@ Comandos:
 - Los tests actualmente cubren el motor y la lógica de análisis/selección de mensajes diarios.
 - El widget `weekly-chart` soporta `period: week`, `period: month` y `period: all`.
 - La sincronización Markdown de quests soporta monitoreo por alcance desde ajustes: daily note, carpetas específicas o toda la bóveda.
+- Las subquests actualmente soportan un solo nivel de anidación, collapse/expand y reordenamiento entre siblings desde el modal de quests.
+- En v1, la quest padre sigue siendo independiente por defecto, pero ahora puedes activar el autocompletado opcional en los ajustes de progresión.
+- Las listas de quests ahora soportan filtro solo roots y controles de expandir/colapsar todo en vistas jerárquicas.
 
 ## Licencia
 
