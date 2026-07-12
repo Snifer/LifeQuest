@@ -39,6 +39,9 @@ export interface StreakState {
 
 export interface Quest {
 	id: string; // UUID v4
+	parentQuestId?: string | null;
+	sortOrder: number;
+	isCollapsed?: boolean;
 	title: string;
 	area: string; // References LifeArea.id
 	frequency: 'daily' | 'weekly' | 'monthly' | 'free';

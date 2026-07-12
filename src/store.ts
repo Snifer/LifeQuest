@@ -44,7 +44,57 @@ type LegacyProfile = typeof DEFAULT_DATA.profile & {
 	class?: string;
 };
 
-function sanitizeData(data: LifequestData): LifequestData {
+export function normalizeQuestHierarchy(data: LifequestData): void {
+	const normalizedQuests = data.quests.map((quest, index) => ({
+		...quest,
+		parentQuestId: typeof quest.parentQuestId === 'string' && quest.parentQuestId.trim() ? quest.parentQuestId : null,
+		sortOrder: Number.isFinite(quest.sortOrder) ? quest.sortOrder : index,
+		isCollapsed: typeof quest.isCollapsed === 'boolean' ? quest.isCollapsed : false,
+	}));
+	const questById = new Map(normalizedQuests.map((quest) => [quest.id, quest]));
+
+	for (const quest of normalizedQuests) {
+		if (!quest.parentQuestId) {
+			continue;
+		}
+
+		const parent = questById.get(quest.parentQuestId);
+		const parentIsRoot = parent ? !parent.parentQuestId : false;
+		const parentIsActive = parent ? parent.status !== 'retired' : false;
+		const isValidParent = Boolean(parent) && parent?.id !== quest.id && parentIsRoot && parentIsActive;
+
+		if (!isValidParent) {
+			quest.parentQuestId = null;
+		}
+	}
+
+	const roots = normalizedQuests
+		.filter((quest) => !quest.parentQuestId)
+		.sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt));
+
+	roots.forEach((quest, index) => {
+		quest.sortOrder = index;
+	});
+
+	const orderedQuests = [...roots];
+
+	for (const root of roots) {
+		const children = normalizedQuests
+			.filter((quest) => quest.parentQuestId === root.id)
+			.sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt));
+
+		children.forEach((quest, index) => {
+			quest.sortOrder = index;
+			quest.isCollapsed = false;
+		});
+
+		orderedQuests.push(...children);
+	}
+
+	data.quests = orderedQuests;
+}
+
+export function sanitizeData(data: LifequestData): LifequestData {
 	data.xp.total = Math.max(0, data.xp.total);
 	const lang = data.settings.language ?? DEFAULT_DATA.settings.language;
 	data.profile.heroName = localizeHeroNameIfDefault(data.profile.heroName, lang);
@@ -68,6 +118,7 @@ function sanitizeData(data: LifequestData): LifequestData {
 	data.settings.rewardSettings.weighIn.base = clampInt(data.settings.rewardSettings.weighIn.base, 0, 200, DEFAULT_DATA.settings.rewardSettings.weighIn.base);
 	data.settings.rewardSettings.weighIn.streak4 = clampInt(data.settings.rewardSettings.weighIn.streak4, 0, 300, DEFAULT_DATA.settings.rewardSettings.weighIn.streak4);
 	data.settings.rewardSettings.weighIn.streak12 = clampInt(data.settings.rewardSettings.weighIn.streak12, 0, 500, DEFAULT_DATA.settings.rewardSettings.weighIn.streak12);
+	normalizeQuestHierarchy(data);
 	return data;
 }
 

@@ -268,6 +268,9 @@ export class QuestConfigModal extends Modal {
 		this.editingId = null;
 		this.draft = {
 			id:         uuid(),
+			parentQuestId: null,
+			sortOrder:  this.plugin.data.quests.length,
+			isCollapsed: false,
 			title:      '',
 			area:       this.plugin.data.settings.lifeAreas[0]?.id ?? 'health',
 			frequency:  'daily',

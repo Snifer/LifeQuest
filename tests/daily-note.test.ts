@@ -6,6 +6,9 @@ import { DEFAULT_DATA } from '../src/types';
 function makeQuest(partial: Partial<Quest>): Quest {
 	return {
 		id: 'quest-1',
+		parentQuestId: null,
+		sortOrder: 0,
+		isCollapsed: false,
 		title: 'Read 10 pages',
 		area: 'learning',
 		frequency: 'daily',

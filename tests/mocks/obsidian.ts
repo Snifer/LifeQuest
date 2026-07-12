@@ -1,5 +1,7 @@
 export class TFile {}
 
+export class App {}
+
 export class Notice {
 	message: string;
 	timeout?: number;
