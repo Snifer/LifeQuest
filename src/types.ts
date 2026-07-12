@@ -10,6 +10,7 @@ export interface LifequestData {
 	coins?: CoinState;
 	shop?: ShopReward[];
 	health?: HealthState;
+	markdownSyncState?: MarkdownSyncStateSnapshot;
 	settings: PluginSettings;
 	lastPenaltyCheck?: string; // ISO date
 }
@@ -211,6 +212,11 @@ export interface DailyMessageSettings {
 	};
 }
 
+export interface MarkdownSyncStateSnapshot {
+	fileStates: Record<string, boolean>;
+	updatedAt: string;
+}
+
 export interface PluginSettings {
 	language: 'en' | 'es';
 	onboardingCompleted: boolean;
@@ -223,6 +229,9 @@ export interface PluginSettings {
 	dailyNoteTemplate: string;
 	dailyNoteGroupByArea: boolean;
 	dailyNoteOnlyPending: boolean;
+	markdownSyncScope: 'daily-note' | 'folders' | 'vault';
+	markdownSyncFolders: string[];
+	markdownSyncExcludedFolders: string[];
 	dailyMessage: DailyMessageSettings;
 	coinsEnabled: boolean;
 	shopEnabled: boolean;
@@ -398,6 +407,9 @@ export const DEFAULT_DATA: LifequestData = {
 		dailyNoteTemplate: "{title}\n{content}",
 		dailyNoteGroupByArea: false,
 		dailyNoteOnlyPending: false,
+		markdownSyncScope: 'daily-note',
+		markdownSyncFolders: [],
+		markdownSyncExcludedFolders: [],
 		dailyMessage: {
 			enabled: false,
 			mode: "random_daily",
@@ -429,6 +441,10 @@ export const DEFAULT_DATA: LifequestData = {
 		},
 		lifeAreas: getDefaultLifeAreas('en'),
 		heroClasses: getDefaultHeroClasses('en')
+	},
+	markdownSyncState: {
+		fileStates: {},
+		updatedAt: "1970-01-01T00:00:00.000Z"
 	},
 	health: {
 		enabled: false,

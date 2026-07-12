@@ -23,6 +23,10 @@ const MESSAGE_BLOCK_START = '<!-- lifequest-message:start -->';
 const MESSAGE_BLOCK_END = '<!-- /lifequest-message -->';
 const QUEST_TAG_REGEX   = /^[\t >*\-+0-9.)]*\[( |x|X)\].*?#lq-([a-f0-9-]+)\b.*$/gm;
 
+type MarkdownSyncScope = LifequestData['settings']['markdownSyncScope'];
+type PluginLanguage = LifequestData['settings']['language'];
+const INTERNAL_EXCLUDED_FOLDERS = ['_LifeQuest', '.obsidian'];
+
 /** Default emoji per well-known area id, fallback to ⭐ */
 const AREA_EMOJI: Record<string, string> = {
 	health:        '🏃',
@@ -276,10 +280,58 @@ export async function generateDailyNote(plugin: LifequestPlugin): Promise<void> 
 // ─── Checkbox detection ───────────────────────────────────────────────────────
 
 const prevState: Map<string, boolean> = new Map();
-let modifyDebounce: number | null = null;
+const modifyDebounces: Map<string, number> = new Map();
 
-async function parseQuestStates(plugin: LifequestPlugin, file: TFile): Promise<Map<string, boolean>> {
-	const content = await plugin.app.vault.read(file);
+function buildQuestStateKey(filePath: string, questId: string): string {
+	return `${filePath}::${questId}`;
+}
+
+function normalizeFolderPath(path: string): string {
+	return path.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+}
+
+function getNormalizedSyncFolders(data: LifequestData): string[] {
+	return data.settings.markdownSyncFolders
+		.map(normalizeFolderPath)
+		.filter((path, index, arr) => path.length > 0 && arr.indexOf(path) === index);
+}
+
+function getNormalizedExcludedSyncFolders(data: LifequestData): string[] {
+	return [...INTERNAL_EXCLUDED_FOLDERS, ...data.settings.markdownSyncExcludedFolders]
+		.map(normalizeFolderPath)
+		.filter((path, index, arr) => path.length > 0 && arr.indexOf(path) === index);
+}
+
+function isInsideTrackedFolder(filePath: string, folders: string[]): boolean {
+	return folders.some((folder) => filePath === folder || filePath.startsWith(`${folder}/`));
+}
+
+function isExcludedTrackedPath(filePath: string, data: LifequestData): boolean {
+	return isInsideTrackedFolder(filePath, getNormalizedExcludedSyncFolders(data));
+}
+
+export function shouldTrackMarkdownFile(
+	filePath: string,
+	fileBasename: string,
+	data: LifequestData,
+	todayBasename: string
+): boolean {
+	const scope: MarkdownSyncScope = data.settings.markdownSyncScope ?? 'daily-note';
+	if (!filePath.toLowerCase().endsWith('.md')) return false;
+	if (isExcludedTrackedPath(filePath, data)) return false;
+
+	switch (scope) {
+		case 'vault':
+			return true;
+		case 'folders':
+			return isInsideTrackedFolder(filePath, getNormalizedSyncFolders(data));
+		case 'daily-note':
+		default:
+			return fileBasename === todayBasename;
+	}
+}
+
+export function parseQuestStatesFromContent(content: string): Map<string, boolean> {
 	const result  = new Map<string, boolean>();
 	let match: RegExpExecArray | null;
 
@@ -289,11 +341,174 @@ async function parseQuestStates(plugin: LifequestPlugin, file: TFile): Promise<M
 		const questId = match[2];
 		if (questId) result.set(questId, done);
 	}
+
 	return result;
+}
+
+function restoreTrackedQuestState(data: LifequestData): void {
+	prevState.clear();
+	const snapshot = data.markdownSyncState?.fileStates ?? {};
+	for (const [stateKey, value] of Object.entries(snapshot)) {
+		prevState.set(stateKey, value);
+	}
+}
+
+function persistTrackedQuestState(data: LifequestData, trackedFiles?: TFile[]): boolean {
+	const trackedPaths = trackedFiles ? new Set(trackedFiles.map((file) => file.path)) : null;
+	const nextState: Record<string, boolean> = {};
+
+	for (const [stateKey, value] of prevState.entries()) {
+		if (trackedPaths) {
+			const separatorIndex = stateKey.indexOf('::');
+			const filePath = separatorIndex === -1 ? '' : stateKey.slice(0, separatorIndex);
+			if (!trackedPaths.has(filePath)) continue;
+		}
+		nextState[stateKey] = value;
+	}
+
+	const currentState = data.markdownSyncState?.fileStates ?? {};
+	const currentKeys = Object.keys(currentState).sort();
+	const nextKeys = Object.keys(nextState).sort();
+	const changed = currentKeys.length !== nextKeys.length ||
+		currentKeys.some((key, index) => key !== nextKeys[index] || currentState[key] !== nextState[key]);
+
+	if (changed || !data.markdownSyncState) {
+		data.markdownSyncState = {
+			fileStates: nextState,
+			updatedAt: new Date().toISOString()
+		};
+	}
+
+	return changed;
+}
+
+async function parseQuestStates(plugin: LifequestPlugin, file: TFile): Promise<Map<string, boolean>> {
+	const content = await plugin.app.vault.read(file);
+	return parseQuestStatesFromContent(content);
+}
+
+function hasQuestOutcomeLoggedToday(data: LifequestData, questId: string, today: string): boolean {
+	return data.activityLog.some((log) =>
+		log.questId === questId &&
+		(log.type === 'quest_completed' || log.type === 'quest_failed') &&
+		log.timestamp.startsWith(today)
+	);
+}
+
+function applyLevelUpRewards(data: LifequestData, lang: PluginLanguage, prevLevel: number): void {
+	if (data.xp.level <= prevLevel) return;
+
+	const title = getLevelTitle(data.xp.level, lang);
+	new Notice(t('daily_note_level_up_notice', lang, { label: t('level_up', lang), level: data.xp.level, title }), 5000);
+	data.activityLog.push({
+		id:          `log-${Date.now()}-lvl`,
+		type:        'level_up',
+		description: t('daily_note_level_up_log', lang, { label: t('level_up', lang), level: data.xp.level, title }),
+		xp:          0,
+		timestamp:   new Date().toISOString()
+	});
+
+	if (data.settings.coinsEnabled && data.coins) {
+		data.coins = earnCoins(
+			data.coins,
+			'level_up',
+			pick(lang, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
+			{ level: data.xp.level },
+			data.settings.rewardSettings
+		);
+		if (data.settings.rewardSettings.notificationsEnabled) {
+			new Notice(t('daily_note_coins_level_up', lang, { amount: calculateCoinReward('level_up', { level: data.xp.level }, data.settings.rewardSettings) }), 3000);
+		}
+	}
+}
+
+function applyEpicQuestReward(data: LifequestData, quest: Quest, isDone: boolean, lang: PluginLanguage): void {
+	if (!(isDone && quest.difficulty === 'epic' && data.settings.coinsEnabled && data.coins)) return;
+
+	data.coins = earnCoins(data.coins, 'epic_quest', quest.title, {}, data.settings.rewardSettings);
+	if (data.settings.rewardSettings.notificationsEnabled) {
+		new Notice(t('daily_note_coins_epic', lang, { amount: calculateCoinReward('epic_quest', {}, data.settings.rewardSettings) }), 2000);
+	}
+}
+
+function applyBadgeRewards(data: LifequestData, lang: PluginLanguage): void {
+	const newBadges = checkBadges(data);
+	for (const badge of newBadges) {
+		data.badges.push(badge);
+		data.activityLog.push({
+			id:          `log-${Date.now()}-badge`,
+			type:        'badge_unlocked',
+			description: `🏅 ${badge.name}`,
+			xp:          badge.xpBonus,
+			timestamp:   new Date().toISOString()
+		});
+		new Notice(t('daily_note_badge_notice', lang, { label: t('badge_unlocked', lang), name: badge.name }), 4000);
+
+		if (data.settings.coinsEnabled && data.coins) {
+			const reason = badge.description.toLowerCase().includes('epic') ? 'badge_epic' : 'badge_common';
+			data.coins = earnCoins(data.coins, reason, badge.name, {}, data.settings.rewardSettings);
+		}
+	}
+}
+
+function applyStreakMilestoneRewards(data: LifequestData, lang: PluginLanguage, oldStreak: number): void {
+	if (!(data.settings.coinsEnabled && data.coins && data.streak.current > oldStreak)) return;
+
+	const days = data.streak.current;
+	if (days === 7 || days === 30 || days === 100) {
+		data.coins = earnCoins(
+			data.coins,
+			'streak_milestone',
+			pick(lang, `${days} días`, `${days} days`),
+			{ streakDays: days },
+			data.settings.rewardSettings
+		);
+		if (data.settings.rewardSettings.notificationsEnabled) {
+			new Notice(t('daily_note_coins_streak', lang, { amount: calculateCoinReward('streak_milestone', { streakDays: days }, data.settings.rewardSettings) }), 4000);
+		}
+	}
+}
+
+function applyQuestOutcome(
+	data: LifequestData,
+	quest: Quest,
+	questId: string,
+	isDone: boolean,
+	lang: PluginLanguage,
+	description: string
+): boolean {
+	const today = moment().format('YYYY-MM-DD');
+	if (hasQuestOutcomeLoggedToday(data, questId, today)) return false;
+
+	const xpDelta   = calculateXP(quest, isDone, data);
+	const prevLevel = calculateLevel(data.xp.total, data.settings.xpPerLevel);
+
+	data.xp.total = Math.max(0, data.xp.total + xpDelta);
+	data.xp.todayGained += xpDelta;
+	data.xp.level = calculateLevel(data.xp.total, data.settings.xpPerLevel);
+
+	data.activityLog.push({
+		id:          `log-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+		type:        isDone ? 'quest_completed' : 'quest_failed',
+		description,
+		xp:          xpDelta,
+		questId,
+		timestamp:   new Date().toISOString()
+	});
+
+	const xpLabel = xpDelta >= 0 ? `+${xpDelta} XP` : `${xpDelta} XP`;
+	const statusText = isDone ? t('quest_completed', lang) : t('quest_failed', lang);
+	new Notice(t('daily_note_status_xp', lang, { status: statusText, quest: quest.title, xp: xpLabel }), 3000);
+
+	applyLevelUpRewards(data, lang, prevLevel);
+	applyEpicQuestReward(data, quest, isDone, lang);
+
+	return true;
 }
 
 async function processQuestDiff(
 	plugin: LifequestPlugin,
+	file: TFile,
 	current: Map<string, boolean>
 ): Promise<void> {
 	const { data, store } = plugin;
@@ -307,11 +522,12 @@ async function processQuestDiff(
 	}
 
 	for (const [questId, isDone] of current) {
-		const wasDone = prevState.get(questId);
+		const stateKey = buildQuestStateKey(file.path, questId);
+		const wasDone = prevState.get(stateKey);
 		
 		// If it's a new quest matching (discovery), don't trigger anything unless it was already marked as done
 		if (wasDone === undefined && isDone === false) {
-			prevState.set(questId, false);
+			prevState.set(stateKey, false);
 			continue;
 		}
 
@@ -320,137 +536,78 @@ async function processQuestDiff(
 		const quest = data.quests.find(q => q.id === questId);
 		if (!quest) continue;
 
-		const xpDelta   = calculateXP(quest, isDone, data);
-		const prevLevel = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-		
-		data.xp.total      = Math.max(0, data.xp.total + xpDelta);
-		data.xp.todayGained += xpDelta;
-		data.xp.level       = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-
-		data.activityLog.push({
-			id:          `log-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-			type:        isDone ? 'quest_completed' : 'quest_failed',
-			description: `${isDone ? '✅' : '❌'} ${quest.title}`,
-			xp:          xpDelta,
-			questId,
-			timestamp:   new Date().toISOString()
-		});
-
-		const xpLabel = xpDelta >= 0 ? `+${xpDelta} XP` : `${xpDelta} XP`;
-		const statusText = isDone ? t('quest_completed', lang) : t('quest_failed', lang);
-		new Notice(t('daily_note_status_xp', lang, { status: statusText, quest: quest.title, xp: xpLabel }), 3000);
-
-		if (data.xp.level > prevLevel) {
-			const title = getLevelTitle(data.xp.level, lang);
-			new Notice(t('daily_note_level_up_notice', lang, { label: t('level_up', lang), level: data.xp.level, title }), 5000);
-			data.activityLog.push({
-				id:          `log-${Date.now()}-lvl`,
-				type:        'level_up',
-				description: t('daily_note_level_up_log', lang, { label: t('level_up', lang), level: data.xp.level, title }),
-				xp:          0,
-				timestamp:   new Date().toISOString()
-			});
-
-			// 🪙 Coins for Level Up
-			if (data.settings.coinsEnabled && data.coins) {
-				data.coins = earnCoins(
-					data.coins,
-					'level_up',
-					pick(lang, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
-					{ level: data.xp.level },
-					data.settings.rewardSettings
-				);
-				if (data.settings.rewardSettings.notificationsEnabled) {
-					new Notice(t('daily_note_coins_level_up', lang, { amount: calculateCoinReward('level_up', { level: data.xp.level }, data.settings.rewardSettings) }), 3000);
-				}
-			}
-		}
-
-		// 🪙 Coins for Epic Quest
-		if (isDone && quest.difficulty === 'epic' && data.settings.coinsEnabled && data.coins) {
-			data.coins = earnCoins(data.coins, 'epic_quest', quest.title, {}, data.settings.rewardSettings);
-			if (data.settings.rewardSettings.notificationsEnabled) {
-				new Notice(t('daily_note_coins_epic', lang, { amount: calculateCoinReward('epic_quest', {}, data.settings.rewardSettings) }), 2000);
-			}
-		}
-		dirty = true;
+		dirty = applyQuestOutcome(data, quest, questId, isDone, lang, `${isDone ? '✅' : '❌'} ${quest.title}`) || dirty;
 	}
 
 	// Update in-memory state
-	for (const [k, v] of current) prevState.set(k, v);
+	for (const [questId, isDone] of current) {
+		prevState.set(buildQuestStateKey(file.path, questId), isDone);
+	}
 
-	if (!dirty) return;
+	const snapshotChanged = persistTrackedQuestState(data);
+	if (!dirty) {
+		if (snapshotChanged) {
+			await store.save(data);
+		}
+		return;
+	}
 
 	// Proper Streak Update: Streak only increments if at least one quest is completed today
 	const hadActivity = Array.from(current.values()).some(v => v === true);
 	const oldStreak = data.streak.current;
 	data.streak = updateStreak(data.streak, today, hadActivity);
-
-	// 🪙 Coins for Streak Milestone (7, 30, 100)
-	if (data.settings.coinsEnabled && data.streak.current > oldStreak && data.coins) {
-		const days = data.streak.current;
-		if (days === 7 || days === 30 || days === 100) {
-			data.coins = earnCoins(
-				data.coins,
-				'streak_milestone',
-				pick(lang, `${days} días`, `${days} days`),
-				{ streakDays: days },
-				data.settings.rewardSettings
-			);
-			if (data.settings.rewardSettings.notificationsEnabled) {
-				new Notice(t('daily_note_coins_streak', lang, { amount: calculateCoinReward('streak_milestone', { streakDays: days }, data.settings.rewardSettings) }), 4000);
-			}
-		}
-	}
+	applyStreakMilestoneRewards(data, lang, oldStreak);
 
 	// Badge check
-	const newBadges = checkBadges(data);
-	for (const badge of newBadges) {
-		data.badges.push(badge);
-		data.activityLog.push({
-			id:          `log-${Date.now()}-badge`,
-			type:        'badge_unlocked',
-			description: `🏅 ${badge.name}`,
-			xp:          badge.xpBonus,
-			timestamp:   new Date().toISOString()
-		});
-		new Notice(t('daily_note_badge_notice', lang, { label: t('badge_unlocked', lang), name: badge.name }), 4000);
+	applyBadgeRewards(data, lang);
 
-		// 🪙 Coins for Badges
-		if (data.settings.coinsEnabled && data.coins) {
-			const reason = badge.description.toLowerCase().includes('epic') ? 'badge_epic' : 'badge_common';
-			data.coins = earnCoins(data.coins, reason, badge.name, {}, data.settings.rewardSettings);
-		}
-	}
-
+	persistTrackedQuestState(data);
 	await store.save(data);
 	
 	// Explicitly refresh dashboard if open
 	plugin.getDashboardView()?.scheduleRefresh();
 }
 
+function getTrackedMarkdownFiles(plugin: LifequestPlugin): TFile[] {
+	const fmt = plugin.data.settings.dailyNoteFormat?.trim() || 'YYYY-MM-DD';
+	const todayStr = moment().format(fmt);
+
+	return plugin.app.vault
+		.getMarkdownFiles()
+		.filter((file) => shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr));
+}
+
+export async function refreshTrackedQuestState(plugin: LifequestPlugin): Promise<void> {
+	restoreTrackedQuestState(plugin.data);
+	await syncTrackedQuestFiles(plugin);
+}
+
 export function initDailyNoteIntegration(plugin: LifequestPlugin): void {
+	restoreTrackedQuestState(plugin.data);
+
 	// Check for penalties from yesterday (Failed at midnight)
 	void checkPreviousDayPenalties(plugin);
 
-	// Startup Sync for today's note (detects checks made while plugin was off)
-	void syncTodayQuests(plugin);
+	// Startup sync for tracked markdown files (detects checks made while plugin was off)
+	void syncTrackedQuestFiles(plugin);
 
 	plugin.registerEvent(
 		plugin.app.vault.on('modify', (file) => {
 			if (!(file instanceof TFile)) return;
 			const fmt      = plugin.data.settings.dailyNoteFormat?.trim() || 'YYYY-MM-DD';
 			const todayStr = moment().format(fmt);
-			if (file.basename !== todayStr) return;
+			if (!shouldTrackMarkdownFile(file.path, file.basename, plugin.data, todayStr)) return;
 
-				if (modifyDebounce) window.clearTimeout(modifyDebounce);
-				modifyDebounce = window.setTimeout(() => {
-				modifyDebounce = null;
+			const existingDebounce = modifyDebounces.get(file.path);
+			if (existingDebounce) window.clearTimeout(existingDebounce);
+			const timeoutId = window.setTimeout(() => {
+				modifyDebounces.delete(file.path);
 				void (async () => {
 					const current = await parseQuestStates(plugin, file);
-					await processQuestDiff(plugin, current);
+					await processQuestDiff(plugin, file, current);
 				})();
 			}, 500);
+			modifyDebounces.set(file.path, timeoutId);
 		})
 	);
 }
@@ -459,56 +616,79 @@ export function initDailyNoteIntegration(plugin: LifequestPlugin): void {
  * Scans today's daily note and compares with logs.
  * Awards XP for any completed quest that hasn't been logged yet today.
  */
-async function syncTodayQuests(plugin: LifequestPlugin) {
-	const { data, app } = plugin;
-	const fmt = data.settings.dailyNoteFormat || 'YYYY-MM-DD';
-	const today = moment().format(fmt);
+export async function syncTrackedQuestFiles(plugin: LifequestPlugin) {
+	const { data } = plugin;
 	const todayISO = moment().format('YYYY-MM-DD');
-	
-	const file = app.vault.getMarkdownFiles().find(f => f.basename === today);
-	if (!file) return;
+	const trackedFiles = getTrackedMarkdownFiles(plugin);
+	if (trackedFiles.length === 0) {
+		const snapshotChanged = persistTrackedQuestState(data, trackedFiles);
+		if (snapshotChanged) {
+			await plugin.store.save(data);
+		}
+		return;
+	}
 
-	const states = await parseQuestStates(plugin, file);
-	
-	// Populate prevState to prevent double-processing in the modify listener
-	for (const [k, v] of states) prevState.set(k, v);
+	const completedQuestIds = new Set<string>();
+	for (const file of trackedFiles) {
+		const states = await parseQuestStates(plugin, file);
+		for (const [questId, isDone] of states) {
+			prevState.set(buildQuestStateKey(file.path, questId), isDone);
+			if (isDone) completedQuestIds.add(questId);
+		}
+	}
 
-	const completedInFile = Array.from(states.entries()).filter(([, done]) => done);
-	if (completedInFile.length === 0) return;
+	if (completedQuestIds.size === 0) {
+		const snapshotChanged = persistTrackedQuestState(data, trackedFiles);
+		if (snapshotChanged) {
+			await plugin.store.save(data);
+		}
+		return;
+	}
 
 	const logsToday = data.activityLog.filter(l => l.timestamp.startsWith(todayISO));
 	let awardedCount = 0;
+	let dirty = false;
 
-	for (const [questId] of completedInFile) {
+	for (const questId of completedQuestIds) {
 		const alreadyLogged = logsToday.some(l => l.questId === questId && l.type === 'quest_completed');
 		if (!alreadyLogged) {
 			const quest = data.quests.find(q => q.id === questId);
 			if (quest) {
-				const xpDelta = calculateXP(quest, true, data);
-				data.xp.total += xpDelta;
-				if (data.xp.todayDate === todayISO) {
-					data.xp.todayGained += xpDelta;
-				} else {
-					data.xp.todayGained = xpDelta;
+				if (data.xp.todayDate !== todayISO) {
+					data.xp.todayGained = 0;
 					data.xp.todayDate = todayISO;
 				}
-				
-				data.activityLog.push({
-					id: `sync-${Date.now()}-${questId}`,
-					type: 'quest_completed',
-					description: t('daily_note_synced_desc', data.settings.language ?? 'es', { quest: quest.title }),
-					xp: xpDelta,
+
+				const applied = applyQuestOutcome(
+					data,
+					quest,
 					questId,
-					timestamp: new Date().toISOString()
-				});
-				awardedCount++;
+					true,
+					data.settings.language ?? 'es',
+					t('daily_note_synced_desc', data.settings.language ?? 'es', { quest: quest.title })
+				);
+				if (applied) {
+					awardedCount++;
+					dirty = true;
+				}
 			}
 		}
+	}
+
+	if (dirty) {
+		const oldStreak = data.streak.current;
+		data.streak = updateStreak(data.streak, todayISO, true);
+		applyStreakMilestoneRewards(data, data.settings.language ?? 'es', oldStreak);
+		applyBadgeRewards(data, data.settings.language ?? 'es');
 	}
 
 	if (awardedCount > 0) {
 		const lang = data.settings.language ?? 'es';
 		new Notice(t('daily_note_synced', lang, { count: awardedCount }), 4000);
+	}
+
+	const snapshotChanged = persistTrackedQuestState(data, trackedFiles);
+	if (awardedCount > 0 || snapshotChanged) {
 		await plugin.store.save(data);
 		plugin.getDashboardView()?.scheduleRefresh();
 	}

@@ -11,6 +11,7 @@ Esta guía te lleva desde la instalación hasta tu primer flujo útil con LifeQu
 3. Abre el dashboard
 4. Crea tu primera quest
 5. Genera el bloque de la nota diaria
+6. Opcional: activa sincronización Markdown por carpetas si usás Kanban
 
 ## Qué es LifeQuest
 

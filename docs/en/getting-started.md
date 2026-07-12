@@ -11,6 +11,7 @@ This guide helps you go from installation to your first useful LifeQuest workflo
 3. Open the dashboard
 4. Create your first quest
 5. Generate your daily note block
+6. Optional: enable Markdown sync for selected folders if you use Kanban
 
 ## What LifeQuest is
 

@@ -31,9 +31,16 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 - Soporta una plantilla configurable del bloque usando los placeholders `{title}`, `{content}` y `{date}`.
 - Puede agrupar quests por área de vida dentro del bloque generado.
 - Puede insertar solo quests pendientes al regenerar el bloque diario.
-- Analiza checkboxes de Markdown y sincroniza el estado de completado de vuelta en LifeQuest.
-- Aplica penalizaciones por quests no completadas del día anterior.
+- Analiza checkboxes de Markdown con tags `#lq-...` y sincroniza el estado de completado de vuelta en LifeQuest.
+- Puede monitorear solo la daily note, carpetas específicas o toda la bóveda para la sincronización Markdown.
+- Aplica penalizaciones del día anterior solo a través del flujo de daily note.
 - Soporta un mensaje motivacional diario opcional encima del bloque generado.
+
+### Sincronización Markdown de quests
+- Cualquier checkbox Markdown que conserve un tag de LifeQuest como `#lq-d23a-...` puede sincronizar completados.
+- Esto funciona con daily notes, tarjetas de Kanban y otros flujos basados en Markdown.
+- En bóvedas grandes, lo recomendado es usar **carpetas específicas** en lugar de **toda la bóveda**.
+- Limitación: las penalizaciones del día anterior **todavía no** se derivan de archivos Markdown genéricos; siguen dependiendo de la daily note.
 
 ### Widgets
 LifeQuest registra un procesador de bloques de código Markdown para bloques ````lifequest````, por lo que puedes incrustar widgets en cualquier nota.
@@ -152,6 +159,7 @@ Comandos:
 - El plugin está dividido en módulos dentro de `src/`, con `main.ts` actuando como punto de entrada del ciclo de vida.
 - Los tests actualmente cubren el motor y la lógica de análisis/selección de mensajes diarios.
 - El widget `weekly-chart` soporta `period: week`, `period: month` y `period: all`.
+- La sincronización Markdown de quests soporta monitoreo por alcance desde ajustes: daily note, carpetas específicas o toda la bóveda.
 
 ## Licencia
 

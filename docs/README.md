@@ -7,6 +7,7 @@ This folder contains the full user documentation for LifeQuest in English and Sp
 1. New user: start with **Getting started**
 2. Daily workflow: read **Daily notes**, **Quests and progression**, and **Weekly review**
 3. Optional systems: read **Shop add-on** and **Health add-on**
+4. If you use Kanban or project notes, check **Daily notes** for Markdown sync scope
 
 ## Language index
 

@@ -2,7 +2,7 @@
 
 [Índice](../README.md) · [English](../en/daily-notes.md)
 
-Esta guía explica cómo LifeQuest genera y sincroniza el bloque de la nota diaria.
+Esta guía explica cómo LifeQuest genera el bloque de la nota diaria y cómo funciona la sincronización Markdown más allá de la daily note.
 
 ## Camino rápido
 
@@ -11,6 +11,12 @@ Esta guía explica cómo LifeQuest genera y sincroniza el bloque de la nota diar
 3. Ejecuta **Generate today’s quests in daily note**
 4. Marca los ítems en la nota
 5. Deja que LifeQuest sincronice el progreso
+
+Para Kanban u otros flujos Markdown:
+
+1. Conserva el tag `#lq-...` en la línea del checkbox
+2. Define el **alcance de sincronización Markdown** en ajustes
+3. Prefiere **carpetas específicas** si no quieres revisar toda la bóveda
 
 ## Qué genera el plugin
 
@@ -85,6 +91,39 @@ LifeQuest lee el estado de los checkboxes del bloque generado y sincroniza:
 - actualizaciones de racha
 - notices y logs relacionados
 
+## Alcance de sincronización Markdown
+
+LifeQuest puede monitorear checkboxes de quests de tres formas:
+
+| Alcance | Qué monitorea | Recomendado para |
+|---------|----------------|------------------|
+| Solo daily note | El archivo de la nota diaria de hoy | Flujo por defecto |
+| Carpetas específicas | Archivos Markdown dentro de carpetas elegidas | Tableros Kanban, notas de proyectos |
+| Toda la bóveda | Todos los archivos Markdown del vault | Configuraciones avanzadas |
+
+Si usás Kanban, el mejor balance normalmente es **carpetas específicas**.
+
+## Formato Markdown soportado
+
+La sincronización funciona cuando la línea del checkbox conserva el tag de la quest:
+
+```text
+- [ ] Build feature #lq-d23a-6cfb-4945-afe3-ecd6ea596e0c
+- [x] Build feature #lq-d23a-6cfb-4945-afe3-ecd6ea596e0c
+```
+
+Eso significa:
+
+- el checkbox debe ser Markdown válido
+- el tag `#lq-...` debe seguir en la misma línea
+- el texto visible puede cambiar
+
+Funciona con:
+
+- daily notes
+- tarjetas Kanban que guarden checklist en Markdown
+- notas normales de proyecto
+
 ## Edición manual
 
 Puedes editar el texto visible de la quest, pero conserva el tag de LifeQuest:
@@ -101,12 +140,25 @@ Si eliminas el tag, el plugin ya no podrá mapear esa línea a la quest real.
 
 LifeQuest revisa el día anterior y puede aplicar penalizaciones por quests incompletas cuando corresponde.
 
+Limitación importante:
+
+- las penalizaciones retroactivas del día anterior hoy salen del flujo de **daily note**
+- la sincronización Markdown genérica se usa para completados, no para penalties retroactivas
+- todavía no existe un modo de penalties multiarchivo
+
+Por qué existe esta limitación:
+
+- una tarjeta Kanban o nota de proyecto puede permanecer abierta muchos días
+- un checkbox sin marcar en esos archivos no significa de forma confiable “falló ayer”
+- usar Markdown genérico para penalties generaría castigos incorrectos
+
 ## Consejos
 
 - conserva intacto el tag generado
 - evita duplicar manualmente el mismo bloque gestionado
 - usa agrupación si tu nota se vuelve larga
 - usa el modo de solo pendientes si regeneras con frecuencia
+- en bóvedas grandes, prefiere carpetas específicas antes que toda la bóveda
 
 ## Siguiente paso
 

@@ -208,6 +208,6 @@ export const es = {
 	daily_note_coins_epic: "🪙 +{amount} monedas (Epic)",
 	daily_note_coins_streak: "🔥 🪙 +{amount} monedas",
 	daily_note_badge_notice: "🏅 {label}: {name}",
-	daily_note_synced: "LifeQuest: {count} quests sincronizadas de la nota diaria.",
+	daily_note_synced: "LifeQuest: {count} quests sincronizadas desde Markdown.",
 	daily_note_synced_desc: "✅ {quest} (Sincronizado)"
 };

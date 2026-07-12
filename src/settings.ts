@@ -7,6 +7,7 @@ import { HealthSetupModal } from './ui/health-setup';
 import { exportHealthCSV } from './ui/health-tracker';
 import { ConfirmModal } from './ui/confirm-modal';
 import { moment } from './obsidian-moment';
+import { refreshTrackedQuestState } from './daily-note';
 
 type TranslationKey = Parameters<typeof t>[0];
 type TranslationVars = Record<string, string | number>;
@@ -244,6 +245,73 @@ export class LifequestSettingTab extends PluginSettingTab {
 					this.plugin.data.settings.dailyNoteOnlyPending = val;
 					await this.plugin.store.save(this.plugin.data);
 				}));
+
+		new Setting(panel)
+			.setName(this.tr('Alcance de sincronización markdown', 'Markdown sync scope'))
+			.setDesc(this.tr(
+				'Define si LifeQuest escucha solo la daily note, carpetas concretas o toda la bóveda.',
+				'Choose whether LifeQuest listens only to the daily note, specific folders, or the whole vault.'
+			))
+			.addDropdown((drop) => drop
+				.addOption('daily-note', this.tr('Solo daily note', 'Daily note only'))
+				.addOption('folders', this.tr('Carpetas específicas', 'Selected folders'))
+				.addOption('vault', this.tr('Toda la bóveda', 'Whole vault'))
+				.setValue(this.plugin.data.settings.markdownSyncScope)
+				.onChange(async (val) => {
+					this.plugin.data.settings.markdownSyncScope = val as LifequestPlugin['data']['settings']['markdownSyncScope'];
+					await this.plugin.store.save(this.plugin.data);
+					await refreshTrackedQuestState(this.plugin);
+					this.rerender();
+				}));
+
+		if (this.plugin.data.settings.markdownSyncScope === 'folders') {
+			new Setting(panel)
+				.setName(this.tr('Carpetas monitoreadas', 'Tracked folders'))
+				.setDesc(this.tr(
+					'Una carpeta por línea. Ejemplo: Projects o Kanban/Work. Solo se revisarán archivos Markdown dentro de esas rutas.',
+					'One folder per line. Example: Projects or Kanban/Work. Only Markdown files inside those paths will be checked.'
+				))
+				.addTextArea((text) => text
+					.setPlaceholder('Projects\nKanban')
+					.setValue(this.plugin.data.settings.markdownSyncFolders.join('\n'))
+					.onChange(async (val) => {
+						this.plugin.data.settings.markdownSyncFolders = val
+							.split('\n')
+							.map((entry) => entry.trim())
+							.filter((entry, index, arr) => entry.length > 0 && arr.indexOf(entry) === index);
+						await this.plugin.store.save(this.plugin.data);
+						await refreshTrackedQuestState(this.plugin);
+					}));
+		}
+
+		if (this.plugin.data.settings.markdownSyncScope === 'folders' || this.plugin.data.settings.markdownSyncScope === 'vault') {
+			new Setting(panel)
+				.setName(this.tr('Carpetas excluidas', 'Excluded folders'))
+				.setDesc(this.tr(
+					'Una carpeta por línea. Útil para ignorar archive, templates u otras zonas que no deberían disparar sincronización.',
+					'One folder per line. Useful for ignoring archive, templates, or other areas that should not trigger sync.'
+				))
+				.addTextArea((text) => text
+					.setPlaceholder('_LifeQuest\nTemplates')
+					.setValue(this.plugin.data.settings.markdownSyncExcludedFolders.join('\n'))
+					.onChange(async (val) => {
+						this.plugin.data.settings.markdownSyncExcludedFolders = val
+							.split('\n')
+							.map((entry) => entry.trim())
+							.filter((entry, index, arr) => entry.length > 0 && arr.indexOf(entry) === index);
+						await this.plugin.store.save(this.plugin.data);
+						await refreshTrackedQuestState(this.plugin);
+					}));
+		}
+
+		if (this.plugin.data.settings.markdownSyncScope === 'vault') {
+			new Setting(panel)
+				.setName(this.tr('Aviso de rendimiento', 'Performance warning'))
+				.setDesc(this.tr(
+					'Monitorear toda la bóveda puede ser más pesado en vaults grandes. Si usás Kanban, suele convenir limitarlo a carpetas específicas.',
+					'Monitoring the whole vault can be heavier in large vaults. If you use Kanban, limiting sync to selected folders is usually better.'
+				));
+		}
 
 		new Setting(panel)
 			.setName(this.tr('Frase diaria remota', 'Remote daily message'))

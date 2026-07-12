@@ -31,9 +31,16 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 - Supports a configurable block template with `{title}`, `{content}`, and `{date}` placeholders.
 - Can group quests by life area inside the generated block.
 - Can insert only pending quests when regenerating the daily block.
-- Parses markdown checkboxes and syncs completion state back into LifeQuest.
-- Applies penalties for missed quests from the previous day.
+- Parses markdown checkboxes with `#lq-...` tags and syncs completion state back into LifeQuest.
+- Can monitor only the daily note, selected folders, or the whole vault for Markdown quest sync.
+- Applies previous-day penalties only through the daily note flow.
 - Supports an optional daily motivational message above the generated block.
+
+### Markdown quest sync
+- Any Markdown checkbox line that keeps a LifeQuest tag like `#lq-d23a-...` can sync quest completion.
+- This works with daily notes, Kanban cards, and other Markdown-based task workflows.
+- Recommended setup for large vaults: use **selected folders** instead of **whole vault**.
+- Limitation: previous-day penalties are **not** derived from generic Markdown files yet. They still depend on the daily note.
 
 ### Widgets
 LifeQuest registers a markdown code block processor for ````lifequest```` blocks, so you can embed live widgets in any note.
@@ -152,6 +159,7 @@ Commands:
 - The plugin is split across modules under `src/`, with `main.ts` acting as lifecycle entrypoint.
 - Tests currently cover the engine and daily message parsing/selection logic.
 - The `weekly-chart` widget supports `period: week`, `period: month`, and `period: all`.
+- Markdown quest sync supports scoped monitoring through settings: daily note, selected folders, or whole vault.
 
 ## License
 

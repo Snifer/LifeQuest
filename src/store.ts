@@ -128,6 +128,19 @@ class LifequestStore {
 			if (typeof data.settings.dailyNoteOnlyPending !== 'boolean') {
 				data.settings.dailyNoteOnlyPending = DEFAULT_DATA.settings.dailyNoteOnlyPending;
 			}
+			if (
+				data.settings.markdownSyncScope !== 'daily-note' &&
+				data.settings.markdownSyncScope !== 'folders' &&
+				data.settings.markdownSyncScope !== 'vault'
+			) {
+				data.settings.markdownSyncScope = DEFAULT_DATA.settings.markdownSyncScope;
+			}
+			if (!Array.isArray(data.settings.markdownSyncFolders)) {
+				data.settings.markdownSyncFolders = [...DEFAULT_DATA.settings.markdownSyncFolders];
+			}
+			if (!Array.isArray(data.settings.markdownSyncExcludedFolders)) {
+				data.settings.markdownSyncExcludedFolders = [...DEFAULT_DATA.settings.markdownSyncExcludedFolders];
+			}
 			if (!data.settings.dailyMessage) {
 				data.settings.dailyMessage = { ...DEFAULT_DATA.settings.dailyMessage };
 			} else {
@@ -215,6 +228,18 @@ class LifequestStore {
 				data.profile.classId = legacyProfile.class;
 			}
 			if (!data.profile.classId) data.profile.classId = 'explorer';
+			if (!data.markdownSyncState) {
+				data.markdownSyncState = structuredClone(DEFAULT_DATA.markdownSyncState);
+			} else {
+				data.markdownSyncState = {
+					fileStates: typeof data.markdownSyncState.fileStates === 'object' && data.markdownSyncState.fileStates
+						? data.markdownSyncState.fileStates
+						: {},
+					updatedAt: typeof data.markdownSyncState.updatedAt === 'string'
+						? data.markdownSyncState.updatedAt
+						: DEFAULT_DATA.markdownSyncState?.updatedAt ?? new Date(0).toISOString(),
+				};
+			}
 			
 			this.currentData = sanitizeData(data);
 			return this.currentData;

@@ -21,6 +21,15 @@ Si tienes algun problema revisa si alguna de las siguientes opciones lo solucion
 - conserva intacto el tag `#lq-...`
 - evita borrar los marcadores del bloque gestionado
 - regenera el bloque si quedó inconsistente
+- si la quest está fuera de la daily note, revisa el **alcance de sincronización Markdown**
+- si usás carpetas específicas, confirma que el archivo esté dentro de una de esas rutas
+- el modo de toda la bóveda puede ser más pesado; normalmente es más seguro usar carpetas específicas
+
+## La penalización no se aplicó desde Kanban u otra nota
+
+- hoy eso es el comportamiento esperado
+- las penalizaciones retroactivas del día anterior se evalúan solo desde el flujo de daily note
+- la sincronización Markdown/Kanban maneja completados, pero no penalties retroactivas genéricas
 
 ## La tienda no abre
 
