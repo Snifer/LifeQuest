@@ -194,6 +194,32 @@
   margin-bottom: 12px;
 }
 
+.lq-toolbar-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--lq-border);
+  background: rgba(255,255,255,0.04);
+}
+
+.lq-toolbar-select-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lq-muted);
+}
+
+.lq-toolbar-select {
+  border: 0;
+  background: transparent;
+  color: var(--text-normal);
+  font-size: 13px;
+  outline: none;
+}
+
 .lq-toolbar-btn.is-active {
   border-color: var(--lq-accent);
   color: var(--lq-accent);
@@ -201,6 +227,42 @@
 }
 
 /* ── Quest list ─────────────────────────────────────────────────────────────── */
+.lq-quest-section {
+  margin-top: 14px;
+}
+
+.lq-quest-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lq-quest-section-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lq-quest-section-title {
+  margin: 0;
+  font-size: 11px;
+  color: var(--lq-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lq-quest-section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--lq-accent);
+}
+
+.lq-quest-section-toggle {
+  padding: 6px 10px;
+}
+
 .lq-quest-item {
   display: flex;
   align-items: center;
@@ -240,10 +302,17 @@
   color: var(--lq-accent);
 }
 
+.lq-quest-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .lq-quest-action-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   border: 1px solid var(--lq-border);
   background: rgba(255,255,255,0.04);
   color: #cbd5e1;
@@ -264,15 +333,45 @@
 }
 
 .lq-quest-action-btn.pending,
-.lq-quest-action-btn.failed {
+.lq-quest-action-btn.done {
   color: var(--lq-green);
   border-color: rgba(74,222,128,0.28);
 }
 
-.lq-quest-action-btn.done {
-  color: var(--lq-green);
-  background: rgba(74,222,128,0.12);
-  border-color: rgba(74,222,128,0.24);
+.lq-quest-action-btn.failed {
+  color: var(--lq-red);
+  border-color: rgba(248,113,113,0.28);
+}
+
+.lq-quest-action-btn.pending {
+  color: var(--lq-muted);
+}
+
+.lq-quest-action-btn.is-active {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.lq-quest-action-btn:disabled {
+  cursor: default;
+  transform: none;
+  opacity: 0.9;
+}
+
+.lq-dashboard-compact .lq-quest-item,
+.lq-quest-item.compact {
+  padding: 7px 10px;
+  gap: 8px;
+}
+
+.lq-dashboard-compact .lq-quest-title,
+.lq-quest-item.compact .lq-quest-title {
+  font-size: 12px;
+}
+
+.lq-dashboard-compact .lq-quest-xp,
+.lq-quest-item.compact .lq-quest-xp {
+  font-size: 10px;
 }
 
 .lq-subquest-progress-badge {

@@ -8,7 +8,7 @@ This guide explains how quests, XP, levels, streaks, badges, and classes work in
 
 1. Create a quest
 2. Assign a life area
-3. Complete it from the dashboard or daily note
+3. Complete, fail, or reset it from the dashboard or complete it from the daily note
 4. Watch XP, streaks, and rewards update
 
 ## Quest types
@@ -68,6 +68,20 @@ LifeQuest now lets you copy quest references directly from the quest UI:
 - **Command Palette** → `LifeQuest: Copy quest as Markdown`
 
 Use the full Markdown checkbox when you want the fastest path into Kanban or any regular note. The command palette flow is useful when you want to find a quest quickly without opening the quest configuration modal.
+
+## Dashboard daily flow
+
+The dashboard now supports a faster daily loop:
+
+- pending, completed, and failed quests render in separate sections
+- completed quests can be hidden, and completed or failed sections can be collapsed
+- each quest row exposes explicit complete, fail, and reset buttons
+- quick actions include new quest, quick complete, and Markdown copy
+- dashboard ordering can follow manual order, priority, XP, or area
+
+Current note on priority sorting:
+
+- priority is currently inferred from difficulty, penalty, and XP
 
 ## Difficulty
 

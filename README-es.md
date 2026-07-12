@@ -27,6 +27,9 @@ LifeQuest comenzó como un plugin personal construido alrededor de mi propio flu
 - Seguimiento de rachas con multiplicadores y registro de actividad.
 - Vista de revisión semanal con estadísticas, tendencias, insights y preguntas de reflexión.
 - Vista de dashboard con resumen del héroe, resumen de hoy, gráfico semanal, áreas de vida, registro de actividad y acciones rápidas.
+- Dashboard con carriles separados para quests pendientes, completadas y fallidas.
+- Acciones explícitas en dashboard para completar, fallar o resetear quests sin abrir otro modal.
+- Modo compacto opcional en dashboard más orden manual, por prioridad, XP o área.
 
 ### Integración con daily notes
 - Genera un bloque de quests dentro de la daily note usando el formato de fecha configurado.
@@ -109,6 +112,7 @@ Dependencias y comportamiento:
 El plugin registra actualmente estos comandos:
 - `LifeQuest: Open dashboard`
 - `LifeQuest: New quest`
+- `LifeQuest: Quick complete quest`
 - `LifeQuest: Copy quest as Markdown`
 - `LifeQuest: Weekly review`
 - `LifeQuest: Generate today's quests in daily note`

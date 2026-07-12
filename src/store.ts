@@ -121,6 +121,12 @@ export function sanitizeData(data: LifequestData): LifequestData {
 	if (typeof data.settings.autoCompleteParentQuests !== 'boolean') {
 		data.settings.autoCompleteParentQuests = DEFAULT_DATA.settings.autoCompleteParentQuests;
 	}
+	if (typeof data.settings.dashboardCompactMode !== 'boolean') {
+		data.settings.dashboardCompactMode = DEFAULT_DATA.settings.dashboardCompactMode;
+	}
+	if (!['manual', 'priority', 'xp', 'area'].includes(data.settings.dashboardQuestSort)) {
+		data.settings.dashboardQuestSort = DEFAULT_DATA.settings.dashboardQuestSort;
+	}
 	normalizeQuestHierarchy(data);
 	return data;
 }
@@ -217,6 +223,12 @@ class LifequestStore {
 			}
 			if (typeof data.settings.autoCompleteParentQuests !== 'boolean') {
 				data.settings.autoCompleteParentQuests = DEFAULT_DATA.settings.autoCompleteParentQuests;
+			}
+			if (typeof data.settings.dashboardCompactMode !== 'boolean') {
+				data.settings.dashboardCompactMode = DEFAULT_DATA.settings.dashboardCompactMode;
+			}
+			if (!['manual', 'priority', 'xp', 'area'].includes(data.settings.dashboardQuestSort)) {
+				data.settings.dashboardQuestSort = DEFAULT_DATA.settings.dashboardQuestSort;
 			}
 				const legacySettings = data.settings as LegacySettings;
 			if (!data.settings.rewardSettings) {

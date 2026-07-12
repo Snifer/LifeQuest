@@ -4,12 +4,14 @@ import { generateDailyNote } from '../daily-note';
 import { ProfileEditorModal } from '../ui/profile-editor';
 import { QuestConfigModal } from '../ui/quest-config';
 import { QuestCopyMarkdownModal } from '../ui/quest-copy-markdown-modal';
+import { QuestQuickCompleteModal } from '../ui/quest-quick-complete-modal';
 import { SHOP_VIEW_TYPE } from '../ui/shop';
 import { HEALTH_VIEW_TYPE } from '../ui/health-tracker';
 import { HealthSetupModal } from '../ui/health-setup';
 import { OnboardingModal } from '../ui/onboarding';
 import { executeObsidianCommand } from '../command-api';
 import { getLang, pick } from '../i18n';
+import { getQuestStatusToday } from '../core/quest-actions';
 
 export function registerCommands(plugin: LifequestPlugin) {
 	const lang = getLang(plugin);
@@ -40,6 +42,19 @@ export function registerCommands(plugin: LifequestPlugin) {
 				return;
 			}
 			new QuestCopyMarkdownModal(plugin).open();
+		}
+	});
+
+	plugin.addCommand({
+		id: 'quick-complete-quest',
+		name: pick(lang, 'LifeQuest: Completar quest rápido', 'LifeQuest: Quick complete quest'),
+		callback: () => {
+			const availableQuests = plugin.data.quests.filter((quest) => quest.status === 'active' && getQuestStatusToday(quest.id, plugin.data.activityLog) !== 'done');
+			if (availableQuests.length === 0) {
+				new Notice(pick(lang, 'No hay quests activas para completar.', 'There are no active quests to complete.'));
+				return;
+			}
+			new QuestQuickCompleteModal(plugin).open();
 		}
 	});
 

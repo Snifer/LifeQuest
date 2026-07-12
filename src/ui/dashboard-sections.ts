@@ -1,17 +1,10 @@
 import { Notice } from 'obsidian';
 import type LifequestPlugin from '../main';
-import { LogEntry, Quest } from '../types';
+import { Quest } from '../types';
 import { 
 	getStreakMultiplier, 
 	getXPToNextLevel, 
 	generateDayStats, 
-	calculateXP, 
-	calculateLevel, 
-	updateStreak, 
-	checkBadges, 
-	getLevelTitle, 
-	earnCoins, 
-	calculateCoinReward 
 } from '../engine';
 import { pick, t } from '../i18n';
 import { executeObsidianCommand } from '../command-api';
@@ -20,18 +13,28 @@ import { ProfileEditorModal } from './profile-editor';
 import { HealthSetupModal } from './health-setup';
 import { calculateHealthMetrics, needsWeighIn } from '../core/health-engine';
 import {
-	flattenVisibleQuests,
-	getParentAutoCompleteCandidate,
+	buildQuestTree,
 	getSubquestProgress,
 	setAllRootCollapsed,
 	type QuestListFilter,
 } from '../core/quest-hierarchy';
+import { getQuestStatusToday, setQuestStatusForToday, type QuestStatus } from '../core/quest-actions';
 import { moment } from '../obsidian-moment';
 
-type QuestStatus = 'done' | 'failed' | 'pending';
 type TranslationKey = Parameters<typeof t>[0];
 type TranslationVars = Record<string, string | number>;
 let dashboardQuestListFilter: QuestListFilter = 'all';
+let dashboardShowCompleted = true;
+let dashboardCompletedCollapsed = false;
+let dashboardFailedCollapsed = false;
+
+interface DashboardQuestRow {
+	quest: Quest;
+	depth: 0 | 1;
+	hasChildren: boolean;
+	isCollapsed: boolean;
+	status: QuestStatus;
+}
 
 function todayStr(): string {
 	return moment().format('YYYY-MM-DD');
@@ -46,14 +49,6 @@ function createTranslator(plugin: LifequestPlugin) {
 		return t(first as TranslationKey, lang, second);
 	}
 	return tr;
-}
-
-function questStatusToday(quest: Quest, logs: LogEntry[]): QuestStatus {
-	const today = todayStr();
-	const todayLogs = logs.filter(l => l.questId === quest.id && l.timestamp.startsWith(today));
-	if (todayLogs.some(l => l.type === 'quest_completed')) return 'done';
-	if (todayLogs.some(l => l.type === 'quest_failed'))    return 'failed';
-	return 'pending';
 }
 
 async function toggleQuestCollapse(plugin: LifequestPlugin, quest: Quest): Promise<void> {
@@ -72,57 +67,87 @@ async function setDashboardQuestCollapse(plugin: LifequestPlugin, collapsed: boo
 	plugin.getDashboardView()?.scheduleRefresh();
 }
 
-function applyAutoCompletedParentReward(data: LifequestPlugin['data'], quest: Quest, lang: LifequestPlugin['data']['settings']['language']): void {
-	if (!data.settings.autoCompleteParentQuests) {
-		return;
+function getAreaOrderMap(plugin: LifequestPlugin): Map<string, number> {
+	return new Map(plugin.data.settings.lifeAreas.map((area, index) => [area.id, index]));
+}
+
+function getPriorityRank(quest: Quest): number {
+	const difficultyRank: Record<Quest['difficulty'], number> = {
+		easy: 1,
+		normal: 2,
+		hard: 3,
+		epic: 4,
+	};
+
+	return (difficultyRank[quest.difficulty] * 1000) + (quest.penalty * 10) + quest.xp;
+}
+
+function compareDashboardQuests(
+	a: Quest,
+	b: Quest,
+	sortMode: LifequestPlugin['data']['settings']['dashboardQuestSort'],
+	areaOrder: Map<string, number>
+): number {
+	switch (sortMode) {
+		case 'priority':
+			return getPriorityRank(b) - getPriorityRank(a) || b.xp - a.xp || a.title.localeCompare(b.title);
+		case 'xp':
+			return b.xp - a.xp || getPriorityRank(b) - getPriorityRank(a) || a.title.localeCompare(b.title);
+		case 'area':
+			return (areaOrder.get(a.area) ?? Number.MAX_SAFE_INTEGER) - (areaOrder.get(b.area) ?? Number.MAX_SAFE_INTEGER)
+				|| b.xp - a.xp
+				|| a.title.localeCompare(b.title);
+		case 'manual':
+		default:
+			return a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt);
 	}
+}
 
-	const today = todayStr();
-	const parent = getParentAutoCompleteCandidate(quest, data.quests, data.activityLog, today);
-	if (!parent) {
-		return;
-	}
+function buildDashboardQuestRows(plugin: LifequestPlugin): DashboardQuestRow[] {
+	const activeQuests = plugin.data.quests.filter((quest) => quest.status === 'active');
+	const areaOrder = getAreaOrderMap(plugin);
+	const sortMode = plugin.data.settings.dashboardQuestSort;
+	const rows: DashboardQuestRow[] = [];
 
-	const alreadyLogged = data.activityLog.some((log) =>
-		log.questId === parent.id &&
-		log.type === 'quest_completed' &&
-		log.timestamp.startsWith(today)
-	);
-	if (alreadyLogged) {
-		return;
-	}
+	const roots = buildQuestTree(activeQuests, false)
+		.sort((a, b) => compareDashboardQuests(a.quest, b.quest, sortMode, areaOrder));
 
-	const xpDelta = calculateXP(parent, true, data);
-	const prevLevel = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-	data.xp.total += xpDelta;
-	data.xp.todayGained += xpDelta;
-	data.xp.level = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-	data.activityLog.push({
-		id: `auto-parent-${Date.now()}-${parent.id}`,
-		type: 'quest_completed',
-		description: `${pick(lang, '✅', '✅')} ${parent.title} (${pick(lang, 'Auto padre', 'Auto parent')})`,
-		xp: xpDelta,
-		questId: parent.id,
-		timestamp: new Date().toISOString(),
-	});
+	for (const root of roots) {
+		const visibleChildren = [...root.children].sort((a, b) => compareDashboardQuests(a.quest, b.quest, sortMode, areaOrder));
+		const isCollapsed = Boolean(root.quest.isCollapsed) && visibleChildren.length > 0;
+		rows.push({
+			quest: root.quest,
+			depth: 0,
+			hasChildren: visibleChildren.length > 0,
+			isCollapsed,
+			status: getQuestStatusToday(root.quest.id, plugin.data.activityLog),
+		});
 
-	if (data.xp.level > prevLevel) {
-		const title = getLevelTitle(data.xp.level, lang);
-		new Notice(t('daily_note_level_up_notice', lang, { level: data.xp.level, title }));
-		if (data.settings.coinsEnabled && data.coins) {
-			data.coins = earnCoins(
-				data.coins,
-				'level_up',
-				pick(lang, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
-				{ level: data.xp.level },
-				data.settings.rewardSettings
-			);
+		if (dashboardQuestListFilter === 'roots' || isCollapsed) {
+			continue;
+		}
+
+		for (const child of visibleChildren) {
+			rows.push({
+				quest: child.quest,
+				depth: 1,
+				hasChildren: false,
+				isCollapsed: false,
+				status: getQuestStatusToday(child.quest.id, plugin.data.activityLog),
+			});
 		}
 	}
 
-	if (parent.difficulty === 'epic' && data.settings.coinsEnabled && data.coins) {
-		data.coins = earnCoins(data.coins, 'epic_quest', parent.title, {}, data.settings.rewardSettings);
+	return rows;
+}
+
+async function handleQuestAction(plugin: LifequestPlugin, quest: Quest, targetStatus: QuestStatus): Promise<void> {
+	const changed = setQuestStatusForToday(plugin.data, quest, targetStatus, plugin.data.settings.language);
+	if (!changed) {
+		return;
 	}
+	await plugin.store.save(plugin.data);
+	plugin.getDashboardView()?.scheduleRefresh();
 }
 
 // ── 4.1 Hero Profile ──────────────────────────────────────────────────────────
@@ -244,8 +269,28 @@ export function renderTodaySummary(plugin: LifequestPlugin, el: HTMLElement): vo
 	const toolbar = card.createDiv({ cls: 'lq-quest-toolbar' });
 	const allBtn = toolbar.createEl('button', { text: tr('Todas', 'All'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
 	const rootsBtn = toolbar.createEl('button', { text: tr('Solo roots', 'Roots only'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+	const completedBtn = toolbar.createEl('button', {
+		text: dashboardShowCompleted ? tr('Ocultar completadas', 'Hide completed') : tr('Mostrar completadas', 'Show completed'),
+		cls: 'lq-btn lq-btn-ghost lq-toolbar-btn',
+	});
 	const collapseBtn = toolbar.createEl('button', { text: tr('Colapsar todo', 'Collapse all'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
 	const expandBtn = toolbar.createEl('button', { text: tr('Expandir todo', 'Expand all'), cls: 'lq-btn lq-btn-ghost lq-toolbar-btn' });
+	const compactBtn = toolbar.createEl('button', {
+		text: data.settings.dashboardCompactMode ? tr('Modo cómodo', 'Comfort mode') : tr('Modo compacto', 'Compact mode'),
+		cls: 'lq-btn lq-btn-ghost lq-toolbar-btn',
+	});
+	const sortWrap = toolbar.createDiv({ cls: 'lq-toolbar-select-wrap' });
+	sortWrap.createSpan({ cls: 'lq-toolbar-select-label', text: tr('Orden', 'Sort') });
+	const sortSelect = sortWrap.createEl('select', { cls: 'lq-toolbar-select' });
+	[
+		['manual', tr('Manual', 'Manual')],
+		['priority', tr('Prioridad', 'Priority')],
+		['xp', 'XP'],
+		['area', tr('Área', 'Area')],
+	].forEach(([value, label]) => {
+		sortSelect.createEl('option', { value, text: label });
+	});
+	sortSelect.value = data.settings.dashboardQuestSort;
 	if (dashboardQuestListFilter === 'all') allBtn.addClass('is-active');
 	if (dashboardQuestListFilter === 'roots') rootsBtn.addClass('is-active');
 	allBtn.addEventListener('click', () => {
@@ -256,8 +301,26 @@ export function renderTodaySummary(plugin: LifequestPlugin, el: HTMLElement): vo
 		dashboardQuestListFilter = 'roots';
 		plugin.getDashboardView()?.scheduleRefresh();
 	});
+	completedBtn.addEventListener('click', () => {
+		dashboardShowCompleted = !dashboardShowCompleted;
+		plugin.getDashboardView()?.scheduleRefresh();
+	});
 	collapseBtn.addEventListener('click', () => { void setDashboardQuestCollapse(plugin, true); });
 	expandBtn.addEventListener('click', () => { void setDashboardQuestCollapse(plugin, false); });
+	compactBtn.addEventListener('click', () => {
+		void (async () => {
+			plugin.data.settings.dashboardCompactMode = !plugin.data.settings.dashboardCompactMode;
+			await plugin.store.save(plugin.data);
+			plugin.getDashboardView()?.scheduleRefresh();
+		})();
+	});
+	sortSelect.addEventListener('change', () => {
+		void (async () => {
+			plugin.data.settings.dashboardQuestSort = sortSelect.value as LifequestPlugin['data']['settings']['dashboardQuestSort'];
+			await plugin.store.save(plugin.data);
+			plugin.getDashboardView()?.scheduleRefresh();
+		})();
+	});
 
 	// Stat chips
 	const chipRow = card.createDiv({ cls: 'lq-chip-row' });
@@ -275,167 +338,130 @@ export function renderTodaySummary(plugin: LifequestPlugin, el: HTMLElement): vo
 		chipLbl.textContent = lbl;
 	});
 
-	// Quest list (active quests only)
-	const activeQuests = data.quests.filter(q => q.status === 'active');
-	const visibleRows = flattenVisibleQuests(activeQuests, false).filter((row) => dashboardQuestListFilter === 'all' || row.depth === 0);
-	const injectedAny = visibleRows.length > 0;
+	const visibleRows = buildDashboardQuestRows(plugin);
 
-	if (!injectedAny) {
+	if (visibleRows.length === 0) {
 		const empty = card.createDiv({ cls: 'lq-empty' });
 		empty.textContent = tr('ui_no_active_quests_today');
 		return;
 	}
 
-	visibleRows.forEach(({ quest, depth, hasChildren, isCollapsed }) => {
-		const status = questStatusToday(quest, data.activityLog);
-		const item = card.createDiv({ cls: `lq-quest-item ${status}` });
-		if (depth === 1) {
-			item.addClass('subquest');
+	const pendingRows = visibleRows.filter((row) => row.status === 'pending');
+	const doneRows = dashboardShowCompleted ? visibleRows.filter((row) => row.status === 'done') : [];
+	const failedRows = visibleRows.filter((row) => row.status === 'failed');
+
+	const renderSection = (
+		label: string,
+		rows: DashboardQuestRow[],
+		collapsed: boolean,
+		onToggleCollapse?: () => void
+	): void => {
+		if (rows.length === 0) {
+			return;
 		}
 
-		const lead = item.createDiv({ cls: 'lq-quest-item-lead' });
-		if (depth === 1) {
-			lead.createDiv({ cls: 'lq-quest-indent' });
-		}
-		if (depth === 0 && hasChildren) {
-			const caret = lead.createEl('button', { cls: 'lq-quest-caret', attr: { title: tr('Mostrar u ocultar subquests', 'Toggle subquests') } });
-			caret.textContent = isCollapsed ? '▸' : '▾';
-			caret.addEventListener('click', (event) => {
-				event.stopPropagation();
-				void toggleQuestCollapse(plugin, quest);
+		const section = card.createDiv({ cls: 'lq-quest-section' });
+		const header = section.createDiv({ cls: 'lq-quest-section-header' });
+		const titleWrap = header.createDiv({ cls: 'lq-quest-section-title-wrap' });
+		titleWrap.createEl('h4', { cls: 'lq-quest-section-title', text: label });
+		titleWrap.createSpan({ cls: 'lq-quest-section-count', text: String(rows.length) });
+
+		if (onToggleCollapse) {
+			const toggleBtn = header.createEl('button', {
+				cls: 'lq-btn lq-btn-ghost lq-quest-section-toggle',
+				text: collapsed ? tr('Expandir', 'Expand') : tr('Colapsar', 'Collapse'),
 			});
-		} else {
-			lead.createDiv({ cls: 'lq-quest-caret-placeholder' });
+			toggleBtn.addEventListener('click', onToggleCollapse);
 		}
 
-		// Colour dot by area
-		const area = data.settings.lifeAreas.find(a => a.id === quest.area);
-		const dot = item.createDiv({ cls: 'lq-quest-dot' });
-		dot.setCssProps({ background: area?.color ?? '#7F77DD' });
+		if (collapsed) {
+			return;
+		}
 
-		const titleWrap = item.createDiv({ cls: 'lq-quest-title-wrap' });
-		const titleEl = titleWrap.createDiv({ cls: 'lq-quest-title' });
-		titleEl.textContent = quest.title;
-		if (!quest.parentQuestId && hasChildren) {
-			const progress = getSubquestProgress(quest.id, data.quests, data.activityLog, today);
-			const progressBadge = titleWrap.createDiv({ cls: 'lq-subquest-progress-badge' });
-			progressBadge.textContent = `${progress.completed}/${progress.total}`;
-			if (progress.allCompleted) {
-				progressBadge.addClass('is-complete');
+		rows.forEach(({ quest, depth, hasChildren, isCollapsed, status }) => {
+			const item = section.createDiv({ cls: `lq-quest-item ${status}` });
+			if (data.settings.dashboardCompactMode) {
+				item.addClass('compact');
 			}
-		}
-
-		const xpEl = item.createDiv({ cls: 'lq-quest-xp' });
-		xpEl.textContent = `${quest.xp} XP`;
-
-		const actionBtn = item.createEl('button', {
-			cls: `lq-quest-action-btn ${status}`,
-			attr: {
-				title: status === 'done'
-					? tr('Marcar como pendiente', 'Mark as pending')
-					: tr('Marcar como completada', 'Mark as completed'),
+			if (depth === 1) {
+				item.addClass('subquest');
 			}
-		});
-		actionBtn.textContent = status === 'done' ? '↺' : '✓';
-		actionBtn.addEventListener('click', (event) => {
-			event.stopPropagation();
-			void toggleQuestStatus(plugin, quest, status);
-		});
-	});
-}
 
-async function toggleQuestStatus(plugin: LifequestPlugin, quest: Quest, currentStatus: QuestStatus) {
-	const { data, store } = plugin;
+			const lead = item.createDiv({ cls: 'lq-quest-item-lead' });
+			if (depth === 1) {
+				lead.createDiv({ cls: 'lq-quest-indent' });
+			}
+			if (depth === 0 && hasChildren) {
+				const caret = lead.createEl('button', { cls: 'lq-quest-caret', attr: { title: tr('Mostrar u ocultar subquests', 'Toggle subquests') } });
+				caret.textContent = isCollapsed ? '▸' : '▾';
+				caret.addEventListener('click', (event) => {
+					event.stopPropagation();
+					void toggleQuestCollapse(plugin, quest);
+				});
+			} else {
+				lead.createDiv({ cls: 'lq-quest-caret-placeholder' });
+			}
 
-	const today = moment().format('YYYY-MM-DD');
-	
-	// Determine next status: pending -> done -> failed -> pending
-	let newStatus: QuestStatus;
-	if (currentStatus === 'pending') newStatus = 'done';
-	else if (currentStatus === 'done') newStatus = 'failed';
-	else newStatus = 'pending';
+			const area = data.settings.lifeAreas.find((item) => item.id === quest.area);
+			const dot = item.createDiv({ cls: 'lq-quest-dot' });
+			dot.setCssProps({ background: area?.color ?? '#7F77DD' });
 
-	// 1. Remove previous logs for this quest today to "undo" before applying new
-	const todayLogs = data.activityLog.filter(l => l.questId === quest.id && l.timestamp.startsWith(today));
-	let xpToRevert = 0;
-	todayLogs.forEach(l => { xpToRevert += l.xp; });
-	
-	data.activityLog = data.activityLog.filter(l => !(l.questId === quest.id && l.timestamp.startsWith(today)));
-	data.xp.total = Math.max(0, data.xp.total - xpToRevert);
-	if (data.xp.todayDate === today) {
-		data.xp.todayGained = Math.max(0, data.xp.todayGained - xpToRevert);
-	}
-
-	// 2. Apply new status if not pending
-	if (newStatus !== 'pending') {
-		const isDone = newStatus === 'done';
-		const xpDelta = calculateXP(quest, isDone, data);
-		const prevLevel = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-
-		data.xp.total += xpDelta;
-		if (data.xp.todayDate === today) {
-			data.xp.todayGained += xpDelta;
-		} else {
-			data.xp.todayGained = xpDelta;
-			data.xp.todayDate = today;
-		}
-		data.xp.level = calculateLevel(data.xp.total, data.settings.xpPerLevel);
-
-		data.activityLog.push({
-			id: `man-${Date.now()}-${quest.id}`,
-			type: isDone ? 'quest_completed' : 'quest_failed',
-			description: `${isDone ? '✅' : '❌'} ${quest.title} (Manual)`,
-			xp: xpDelta,
-			questId: quest.id,
-			timestamp: new Date().toISOString()
-		});
-
-		if (data.xp.level > prevLevel) {
-			const title = getLevelTitle(data.xp.level, data.settings.language);
-			new Notice(t('daily_note_level_up_notice', data.settings.language, { level: data.xp.level, title }));
-
-			// 🪙 Coins for Level Up
-			if (data.settings.coinsEnabled && data.coins) {
-				data.coins = earnCoins(
-					data.coins,
-					'level_up',
-					pick(data.settings.language, `Nivel ${data.xp.level}`, `Level ${data.xp.level}`),
-					{ level: data.xp.level },
-					data.settings.rewardSettings
-				);
-				if (data.settings.rewardSettings.notificationsEnabled) {
-					new Notice(t('daily_note_coins_level_up', data.settings.language, {
-						coins: calculateCoinReward('level_up', { level: data.xp.level }, data.settings.rewardSettings),
-					}), 3000);
+			const rowTitleWrap = item.createDiv({ cls: 'lq-quest-title-wrap' });
+			const titleEl = rowTitleWrap.createDiv({ cls: 'lq-quest-title' });
+			titleEl.textContent = quest.title;
+			if (!quest.parentQuestId && hasChildren) {
+				const progress = getSubquestProgress(quest.id, data.quests, data.activityLog, today);
+				const progressBadge = rowTitleWrap.createDiv({ cls: 'lq-subquest-progress-badge' });
+				progressBadge.textContent = `${progress.completed}/${progress.total}`;
+				if (progress.allCompleted) {
+					progressBadge.addClass('is-complete');
 				}
 			}
-		}
 
-		// 🪙 Coins for Epic Quest
-		if (isDone && quest.difficulty === 'epic' && data.settings.coinsEnabled && data.coins) {
-			data.coins = earnCoins(data.coins, 'epic_quest', quest.title, {}, data.settings.rewardSettings);
-		}
+			const xpEl = item.createDiv({ cls: 'lq-quest-xp' });
+			xpEl.textContent = `${quest.xp} XP`;
 
-		if (isDone) {
-			applyAutoCompletedParentReward(data, quest, data.settings.language);
-		}
-	}
+			const actions = item.createDiv({ cls: 'lq-quest-action-group' });
+			const actionDefs: Array<[QuestStatus, string, string]> = [
+				['done', '✓', tr('Marcar completada', 'Mark completed')],
+				['failed', '✕', tr('Marcar fallida', 'Mark failed')],
+				['pending', '↺', tr('Resetear a pendiente', 'Reset to pending')],
+			];
 
-	// 3. Update Streak
-	const hasActivityToday = data.activityLog.some(l => 
-		l.timestamp.startsWith(today) && (l.type === 'quest_completed')
+			actionDefs.forEach(([targetStatus, icon, labelText]) => {
+				const actionBtn = actions.createEl('button', {
+					cls: `lq-quest-action-btn ${targetStatus} ${status === targetStatus ? 'is-active' : ''}`,
+					attr: { title: labelText, 'aria-label': labelText },
+				});
+				actionBtn.textContent = icon;
+				actionBtn.disabled = status === targetStatus;
+				actionBtn.addEventListener('click', (event) => {
+					event.stopPropagation();
+					void handleQuestAction(plugin, quest, targetStatus);
+				});
+			});
+		});
+	};
+
+	renderSection(tr('Pendientes', 'Pending'), pendingRows, false);
+	renderSection(
+		tr('Completadas', 'Completed'),
+		doneRows,
+		dashboardCompletedCollapsed,
+		() => {
+			dashboardCompletedCollapsed = !dashboardCompletedCollapsed;
+			plugin.getDashboardView()?.scheduleRefresh();
+		}
 	);
-	data.streak = updateStreak(data.streak, today, hasActivityToday);
-
-	// 4. Badges
-	const newBadges = checkBadges(data);
-	newBadges.forEach(b => {
-		data.badges.push(b);
-		new Notice(t('daily_note_badge_notice', data.settings.language, { name: b.name }));
-	});
-
-	await store.save(data);
-	plugin.getDashboardView()?.scheduleRefresh();
+	renderSection(
+		tr('Fallidas', 'Failed'),
+		failedRows,
+		dashboardFailedCollapsed,
+		() => {
+			dashboardFailedCollapsed = !dashboardFailedCollapsed;
+			plugin.getDashboardView()?.scheduleRefresh();
+		}
+	);
 }
 
 // ── 4.3 Weekly XP Chart ───────────────────────────────────────────────────────
@@ -661,8 +687,13 @@ export function renderQuickActions(
 		const actions: Array<[string, string, () => void]> = [
 			['📝', tr('ui_daily_note'), () => void generateDailyNote(plugin)],
 			['⚔', tr('ui_new_quest'),  () => onCommand('new-quest')],
+			['✅', tr('Completar quest', 'Complete quest'), () => onCommand('quick-complete-quest')],
 			['📊', tr('ui_weekly_review'), () => onCommand('weekly-review')],
 		];
+
+		if (plugin.data.settings.markdownSyncScope !== 'daily-note') {
+			actions.splice(3, 0, ['📋', tr('Copiar Markdown', 'Copy Markdown'), () => onCommand('copy-quest-markdown')]);
+		}
 
 		if (plugin.data.settings.coinsEnabled && plugin.data.settings.shopEnabled) {
 			actions.splice(2, 0, ['🛍️', tr('ui_shop'), () => onCommand('open-shop')]);

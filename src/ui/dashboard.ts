@@ -46,6 +46,7 @@ export class DashboardView extends ItemView {
 		const root = this.contentEl;
 		root.empty();
 		root.addClass('lifequest-dashboard');
+		root.toggleClass('lq-dashboard-compact', this.plugin.data.settings.dashboardCompactMode);
 		root.style.setProperty('--lq-user-accent', this.plugin.data.profile.accentColor);
 
 		renderHero(this.plugin, root);

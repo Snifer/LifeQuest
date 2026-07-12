@@ -1,6 +1,30 @@
 # Changelog
 
 
+## 1.0.8
+
+Dashboard UX release focused on reducing daily friction with clearer quest states and faster actions.
+
+### Added
+
+- Separate dashboard sections for pending, completed, and failed quests.
+- Explicit per-quest quick actions to complete, fail, or reset a quest directly from the dashboard.
+- Dashboard quick actions for quick complete and Markdown copy, alongside the existing new quest flow.
+- Dashboard sorting controls for manual, priority, XP, and area ordering.
+- Compact dashboard mode for denser quest scanning.
+
+### Changed
+
+- Updated plugin version metadata for the `1.0.8` release.
+- Added dashboard settings to persist compact mode and dashboard sort preference.
+- Completed quests can now be hidden from the dashboard, while completed and failed sections can also be collapsed independently.
+- Priority sorting uses difficulty, penalty, and XP as the practical ranking signal for now.
+
+### Fixed
+
+- Manual dashboard quest actions now share a reusable quest-status pipeline instead of duplicating reward logic.
+- Parent auto-complete can be reverted correctly when a subquest is reset back to pending on the same day.
+
 ## 1.0.7
 
 Feature release focused on the subquests implementation and the hierarchy UX improvements built on top of it.

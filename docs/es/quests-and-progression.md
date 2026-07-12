@@ -8,7 +8,7 @@ Esta guía explica cómo funcionan las quests, la XP, los niveles, las rachas, l
 
 1. Crea una quest
 2. Asígnala a un área de vida
-3. Complétala desde el dashboard o la nota diaria
+3. Complétala, márcala como fallida o reseteala desde el dashboard, o complétala desde la nota diaria
 4. Observa cómo cambian XP, rachas y recompensas
 
 ## Tipos de quests
@@ -68,6 +68,20 @@ LifeQuest ahora te deja copiar referencias de quest directamente desde la UI:
 - **Command Palette** → `LifeQuest: Copy quest as Markdown`
 
 Usa el checkbox Markdown completo cuando quieras el camino más rápido hacia Kanban o cualquier nota normal. El flujo por Command Palette sirve cuando quieres encontrar una quest rápido sin abrir el modal de configuración.
+
+## Flujo diario desde el dashboard
+
+El dashboard ahora soporta un loop más rápido:
+
+- quests pendientes, completadas y fallidas se muestran en secciones separadas
+- las completadas se pueden ocultar y las secciones de completadas o fallidas se pueden colapsar
+- cada fila tiene botones explícitos para completar, fallar o resetear
+- las acciones rápidas incluyen nueva quest, completar rápido y copiar Markdown
+- el orden del dashboard puede seguir modo manual, prioridad, XP o área
+
+Nota actual sobre el orden por prioridad:
+
+- por ahora la prioridad se infiere a partir de dificultad, penalización y XP
 
 ## Dificultad
 

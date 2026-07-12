@@ -27,6 +27,9 @@ LifeQuest started as a personal plugin built around my own workflow. I am sharin
 - Streak tracking with multipliers and activity log.
 - Weekly review view with stats, trends, insights, and reflection prompts.
 - Dashboard view with hero summary, today summary, weekly chart, life areas, activity log, and quick actions.
+- Dashboard quest lanes separated into pending, completed, and failed sections.
+- Explicit dashboard actions to complete, fail, or reset quests without opening another modal.
+- Optional dashboard compact mode plus manual, priority, XP, or area sorting.
 
 ### Daily note integration
 - Generates a quest block inside the daily note using the configured date format.
@@ -109,6 +112,7 @@ Dependencies and behavior:
 The plugin currently registers these commands:
 - `LifeQuest: Open dashboard`
 - `LifeQuest: New quest`
+- `LifeQuest: Quick complete quest`
 - `LifeQuest: Copy quest as Markdown`
 - `LifeQuest: Weekly review`
 - `LifeQuest: Generate today's quests in daily note`

@@ -239,6 +239,8 @@ export interface PluginSettings {
 	coinsEnabled: boolean;
 	shopEnabled: boolean;
 	showCoinsInDashboard: boolean;
+	dashboardCompactMode: boolean;
+	dashboardQuestSort: 'manual' | 'priority' | 'xp' | 'area';
 	rewardSettings: RewardSettings;
 	xpPerLevel: number;
 	autoCompleteParentQuests: boolean;
@@ -377,7 +379,7 @@ export function localizeDefaultShopRewards(rewards: ShopReward[], lang: Localize
 }
 
 export const DEFAULT_DATA: LifequestData = {
-	version: "1.0.3",
+	version: "1.0.8",
 	profile: {
 		heroName: getDefaultHeroName('en'),
 		motto: "",
@@ -425,6 +427,8 @@ export const DEFAULT_DATA: LifequestData = {
 		coinsEnabled: true,
 		shopEnabled: false,
 		showCoinsInDashboard: false,
+		dashboardCompactMode: false,
+		dashboardQuestSort: 'manual',
 		rewardSettings: {
 			notificationsEnabled: true,
 			multiplier: 1.0,

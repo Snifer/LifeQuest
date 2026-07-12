@@ -313,6 +313,39 @@ export class LifequestSettingTab extends PluginSettingTab {
 				));
 		}
 
+		this.renderSubheading(panel, this.tr('Dashboard', 'Dashboard'));
+		new Setting(panel)
+			.setName(this.tr('Modo compacto del dashboard', 'Compact dashboard mode'))
+			.setDesc(this.tr(
+				'Reduce espaciados y compacta las quests para ver más items sin perder contexto.',
+				'Reuses tighter spacing so you can scan more quests at once.'
+			))
+			.addToggle((toggle) => toggle
+				.setValue(this.plugin.data.settings.dashboardCompactMode)
+				.onChange(async (val) => {
+					this.plugin.data.settings.dashboardCompactMode = val;
+					await this.plugin.store.save(this.plugin.data);
+					this.plugin.getDashboardView()?.scheduleRefresh();
+				}));
+
+		new Setting(panel)
+			.setName(this.tr('Orden de quests en dashboard', 'Dashboard quest order'))
+			.setDesc(this.tr(
+				'Manual respeta tu orden actual. Prioridad usa dificultad, penalty y XP como señal práctica.',
+				'Manual keeps your current order. Priority uses difficulty, penalty, and XP as a practical signal.'
+			))
+			.addDropdown((drop) => drop
+				.addOption('manual', this.tr('Manual', 'Manual'))
+				.addOption('priority', this.tr('Prioridad', 'Priority'))
+				.addOption('xp', this.tr('XP', 'XP'))
+				.addOption('area', this.tr('Área', 'Area'))
+				.setValue(this.plugin.data.settings.dashboardQuestSort)
+				.onChange(async (val) => {
+					this.plugin.data.settings.dashboardQuestSort = val as LifequestPlugin['data']['settings']['dashboardQuestSort'];
+					await this.plugin.store.save(this.plugin.data);
+					this.plugin.getDashboardView()?.scheduleRefresh();
+				}));
+
 		new Setting(panel)
 			.setName(this.tr('Frase diaria remota', 'Remote daily message'))
 			.setDesc(this.tr('Añade una frase motivacional encima de la nota diaria solo si activas esta opción.', 'Add a motivational message above the daily note only if you enable this option.'))
